@@ -6,12 +6,12 @@ const NavBar = () => {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between">
           <div className="flex text-3x1 mt-1 space-x-4 text-white font-bold">
-            E-Developer Card
+            Developer's E-Card
           </div>
           <div className="flex items-center space-x-1">
             <button
               className="bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-              onClick={() => (window.location.href = "#")}
+              onClick={() => (window.location.href = "https://github.com/imilindmishra/E-dev-Card")}
             >
               Github Repo.
             </button>
