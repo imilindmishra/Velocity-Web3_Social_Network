@@ -74,7 +74,7 @@ function CreateCard({ onDataChange }) {
             <input
               {...register("name", { required: true })}
               id="name"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker"
+              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
               placeholder="Your Name..."
               value={formData.name}
               onChange={handleInputChange}
@@ -86,7 +86,7 @@ function CreateCard({ onDataChange }) {
             <input
               {...register("role", { required: true })}
               id="role"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker"
+              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
               placeholder="Description: Full Stack/Frontend/Backend/etc...."
               value={formData.role}
               onChange={handleInputChange}
@@ -97,7 +97,7 @@ function CreateCard({ onDataChange }) {
             <input
               {...register("interests", { required: true })}
               id="interests"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker"
+              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
               placeholder="Your Interests..."
               value={formData.interests}
               onChange={handleInputChange}
@@ -108,7 +108,7 @@ function CreateCard({ onDataChange }) {
             <input
               {...register("githubUsername", { required: true })}
               id="githubUsername"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker"
+              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
               placeholder="Your github username... (card image will be same as github avatar)"
               value={formData.githubUsername}
               onChange={handleInputChange}
@@ -130,14 +130,14 @@ function CreateCard({ onDataChange }) {
               <input
                 type="text"
                 placeholder="Social Media Name"
-                className="w-1/2 p-2 border border-gray-300 rounded-md"
+                className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
                 value={social.name}
                 onChange={(e) => handleSocialMediaChange(index, "name", e.target.value)}
               />
               <input
                 type="text"
                 placeholder="Social Media Link"
-                className="w-1/2 p-2 border border-gray-300 rounded-md"
+                className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
                 value={social.link}
                 onChange={(e) => handleSocialMediaChange(index, "link", e.target.value)}
               />
@@ -157,38 +157,44 @@ function CreateCard({ onDataChange }) {
           </button>
         </form>
       </div>
-      <div className="w-1/2">
-        {formData && (
-          <div className="bg-indigo-950 mt-28 max-w-sm mx-auto mb-8 h-48 w-112 shadow-lg rounded-lg overflow-hidden">
-            <div className="px-4 py-6">
+        
+        <div className="w-1/2">
+          {formData && (
+            <div className="bg-indigo-950 mt-28 max-w-sm mx-auto mb-8 h-48 w-112 shadow-lg rounded-lg overflow-hidden flex items-center">
               <img
-                  className="w-24 h-24 rounded-full mr-4"
-                  src={profilePic}
-                  alt="GitHub Avatar"
+                className="mt-3 w-28 h-28 rounded-full mr-4 ml-4"
+                src={profilePic}
+                alt="GitHub Avatar"
               />
-              <div className="text-white font-bold text-xl mb-2">{formData.name}</div>
-              <p className="text-white text-sm">{formData.role}</p>
-              <p className="text-white text-sm">{formData.interests}</p>
-              <div className="flex mt-4">
-                
-                <div>
-                  {formData.socialMedia.map((social, index) => (
-                    <a
-                      key={index}
-                      href={social.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 mr-2"
-                    >
-                      {social.name}
-                    </a>
+            <div className="px-4 py-6 text-white">
+              <div className="font-bold text-xl mb-2">{formData.name}</div>
+              <p className="text-sm"><b className="mr-2 mb-2">Role:</b> {formData.role}</p>
+              <p className="text-sm"><b className="mr-2 mb-2">Interests:</b> {formData.interests}</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                  {socialMedia.map((social, index) => (
+                    social.name && social.link ? (
+                      // Separate rounded buttons for each social media link
+                      <button
+                        key={index}
+                        className="bg-blue-900 text-white font-normal text-sm px-2 rounded"
+                      >
+                        <a
+                          href={social.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white mr-2"
+                        >
+                          {social.name} →
+                        </a>
+                      </button>
+                    ) : null
                   ))}
                 </div>
-              </div>
             </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+        </div>
     </div>
   </>
   );
