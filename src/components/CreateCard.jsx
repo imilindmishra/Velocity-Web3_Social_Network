@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import NavBar from "./NavBar";
+import { useNavigate } from "react-router-dom";
 
 function CreateCard({ onDataChange }) {
   const { register, handleSubmit, formState: { errors }, setValue } = useForm();
@@ -13,6 +14,8 @@ function CreateCard({ onDataChange }) {
     githubUsername: "",
     socialMedia: []
   });
+
+  const navigate = useNavigate();
 
     const [profilePic, setProfilePic] = useState("");
 
@@ -58,11 +61,21 @@ function CreateCard({ onDataChange }) {
     setSocialMedia(updatedSocialMedia);
   };
 
-  const onSubmit = (data) => {
-    onDataChange({ ...data, socialMedia });
-  };
-
   const showRemoveButton = socialMedia.length > 0;
+
+  const onSubmit = async (data) => {
+  // Combine form data with social media state
+  const cardData = { ...data, socialMedia, profilePic }; // Include profilePic in the data to be saved
+
+  try {
+    // Send a POST request to the server to save the card
+    await axios.post('http://localhost:5000/api/cards', cardData);
+    console.log('Card added successfully!');
+    navigate('/view-cards');
+    } catch (error) {
+    console.error('Error adding card:', error);
+  }
+};
 
   return (
     <>
