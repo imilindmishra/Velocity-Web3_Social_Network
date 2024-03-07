@@ -69,9 +69,13 @@ function CreateCard({ onDataChange }) {
 
   try {
     // Send a POST request to the server to save the card
-    await axios.post('http://localhost:5000/api/cards', cardData);
-    console.log('Card added successfully!');
-    navigate('/view-cards');
+     await axios.post("http://localhost:5000/api/cards", cardData);
+
+    
+    
+
+    alert('Card added successfully!');
+    
     } catch (error) {
     console.error('Error adding card:', error);
   }
