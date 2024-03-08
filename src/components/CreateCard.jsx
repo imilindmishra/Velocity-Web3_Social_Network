@@ -3,6 +3,8 @@ import axios from "axios";
 import { useForm } from "react-hook-form";
 import NavBar from "./NavBar";
 import { useNavigate } from "react-router-dom";
+import * as htmlToImage from 'html-to-image';
+
 
 function CreateCard({ onDataChange }) {
   const { register, handleSubmit, formState: { errors }, setValue } = useForm();
@@ -67,16 +69,20 @@ function CreateCard({ onDataChange }) {
   // Combine form data with social media state
   const cardData = { ...data, socialMedia, profilePic }; // Include profilePic in the data to be saved
 
-  try {
-    // Send a POST request to the server to save the card
-     await axios.post("http://localhost:5000/api/cards", cardData);
+  
 
-    
-    
+  try {
+    // Convert card template to an image
+    const cardImage = await htmlToImage.toPng(document.getElementById('cardTemplate'));
+
+    // Convert the image data to a base64 string
+    const base64Image = cardImage.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
+
+    // Send a POST request to the server to save the card data
+    await axios.post("http://localhost:5000/api/cards", { ...cardData, cardImage: base64Image });
 
     alert('Card added successfully!');
-    
-    } catch (error) {
+  } catch (error) {
     console.error('Error adding card:', error);
   }
 };
@@ -177,7 +183,7 @@ function CreateCard({ onDataChange }) {
         
         <div className="w-1/2">
           {formData && (
-            <div className="bg-indigo-950 mt-28 max-w-sm mx-auto mb-8 h-48 w-112 shadow-lg rounded-lg overflow-hidden flex items-center">
+            <div id='cardTemplate' className="bg-indigo-950 mt-28 max-w-sm mx-auto mb-8 h-48 w-112 shadow-lg rounded-lg overflow-hidden flex items-center">
               <img
                 className="mt-3 w-28 h-28 rounded-full mr-4 ml-4"
                 src={profilePic}

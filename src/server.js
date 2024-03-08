@@ -21,16 +21,22 @@ app.post("/api/cards", async (req, res) => {
   try {
     const cardData = req.body;
 
-    // Generate a unique file name (you can use a timestamp, UUID, or any other method)
-    const fileName = `${Date.now()}.json`;
+    // Generate unique file names for both the JSON and image files
+    const jsonFileName = `${Date.now()}.json`;
+    const imageFileName = `${Date.now()}.png`;
 
-    // Define the path where the file will be saved
-    const filePath = path.join(cardsDirectory, fileName);
+    // Define the paths where the files will be saved
+    const jsonFilePath = path.join(cardsDirectory, jsonFileName);
+    const imageFilePath = path.join(cardsDirectory, imageFileName);
 
-    // Write the card data to the file
-    fs.writeFileSync(filePath, JSON.stringify(cardData, null, 2));
+    // Write the card data (JSON) to the file
+    fs.writeFileSync(jsonFilePath, JSON.stringify(cardData, null, 2));
 
-    res.status(201).json({ fileName }); // Return the file name or any other response as needed
+    // Write the card image data to the file
+    fs.writeFileSync(imageFilePath, cardImage, "base64"); // Assuming cardImage is in base64 format
+
+    // Respond with the file names or any other response as needed
+    res.status(201).json({ jsonFileName, imageFileName });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
