@@ -1,37 +1,36 @@
-// server.js
+import express from 'express';
+import multer from 'multer';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
 
-import express, { json } from "express";
-import { connect, Schema, model } from "mongoose";
-import cors from "cors";
+// For handling __dirname in ES Module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 5000;
-app.use(cors());
+const port = 5000;
 
-app.use(json());
+app.use(cors()); // Use CORS
 
-
-app.post("/api/cards", async (req, res) => {
-  try {
-    const newCard = new Card(req.body);
-    const savedCard = await newCard.save();
-    res.status(201).json(savedCard);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+// Configure multer for file upload
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, path.join(__dirname, '/output/')); // Make sure the output directory exists
+  },
+  filename: function(req, file, cb) {
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
   }
 });
 
+const upload = multer({ storage: storage });
 
-app.get("/api/cards", async (req, res) => {
-  try {
-    const cards = await Card.find();
-    res.json(cards);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+app.post('/api/cards', upload.single('cardImage'), (req, res) => {
+  console.log('Received card data:', req.body);
+  console.log('Received file:', req.file);
+  res.json({ message: 'Card and image uploaded successfully!' });
 });
 
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
 });

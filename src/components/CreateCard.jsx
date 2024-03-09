@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useForm } from "react-hook-form";
-import NavBar from "./NavBar";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useForm } from 'react-hook-form';
+import html2canvas from 'html2canvas';
+import NavBar from './NavBar'; // Ensure NavBar is correctly imported
+import { useNavigate } from 'react-router-dom';
 
 function CreateCard({ onDataChange }) {
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm();
+  const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors } } = useForm();
   const [socialMedia, setSocialMedia] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -14,202 +16,140 @@ function CreateCard({ onDataChange }) {
     githubUsername: "",
     socialMedia: []
   });
+  const [profilePic, setProfilePic] = useState("");
 
-  const navigate = useNavigate();
-
-    const [profilePic, setProfilePic] = useState("");
-
-    useEffect(() => {
-    if (formData.githubUsername) {
-      const fetchUserProfile = async () => {
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (formData.githubUsername) {
         try {
           const response = await axios.get(`https://api.github.com/users/${formData.githubUsername}`);
           setProfilePic(response.data.avatar_url);
         } catch (error) {
           console.error("Error fetching GitHub profile:", error);
-          // Handle error or set a default image
+          setProfilePic(""); // Reset or set to a default image if there's an error
         }
-      };
-      fetchUserProfile();
-    }
+      }
+    };
+
+    fetchUserProfile();
   }, [formData.githubUsername]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prevState => ({
+      ...prevState,
       [name]: value
-    });
+    }));
   };
 
   function addSocialMediaField() {
-    setSocialMedia([
-      ...socialMedia,
-      { name: "", link: "" }
-    ]);
+    setSocialMedia(prev => [...prev, { name: "", link: "" }]);
   }
 
   const handleSocialMediaChange = (index, key, value) => {
-    const updatedSocialMedia = [...socialMedia];
-    updatedSocialMedia[index][key] = value;
+    const updatedSocialMedia = socialMedia.map((item, idx) => 
+      index === idx ? { ...item, [key]: value } : item
+    );
     setSocialMedia(updatedSocialMedia);
   };
 
   const removeSocialMediaField = (index) => {
-    const updatedSocialMedia = [...socialMedia];
-    updatedSocialMedia.splice(index, 1);
-    setSocialMedia(updatedSocialMedia);
+    setSocialMedia(socialMedia.filter((_, idx) => idx !== index));
   };
 
-  const showRemoveButton = socialMedia.length > 0;
-
   const onSubmit = async (data) => {
-  // Combine form data with social media state
-  const cardData = { ...data, socialMedia, profilePic }; // Include profilePic in the data to be saved
+    const element = document.getElementById('card-preview');
+    html2canvas(element).then(async (canvas) => {
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], "card-image.png", { type: "image/png" });
+        const formData = new FormData();
+        formData.append('cardImage', file);
 
-  try {
-    // Send a POST request to the server to save the card
-    await axios.post('http://localhost:5000/api/cards', cardData);
-    console.log('Card added successfully!');
-    navigate('/view-cards');
-    } catch (error) {
-    console.error('Error adding card:', error);
-  }
-};
+        try {
+          const response = await axios.post('http://localhost:5000/api/cards', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          console.log('Card added successfully!');
+          console.log(response.data); // Assuming the server responds with some data
+          // navigate('/view-cards'); // Uncomment or modify as needed
+        } catch (error) {
+          console.error('Error adding card:', error);
+        }
+      });
+    });
+  };
 
   return (
     <>
-    <NavBar />
+      <NavBar />
       <div className="flex justify-center">
         <div className="w-1/2">
           <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg">
-          <div className="mb-4">
-            <input
-              {...register("name", { required: true })}
-              id="name"
-              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
-              placeholder="Your Name..."
-              value={formData.name}
-              onChange={handleInputChange}
-            />
-            {errors.name && <span className="text-red-500">Name is required</span>}
-          </div>
-          {/* Other input fields go here */}
-          <div className="mb-4">
-            <input
-              {...register("role", { required: true })}
-              id="role"
-              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
-              placeholder="Description: Full Stack/Frontend/Backend/etc...."
-              value={formData.role}
-              onChange={handleInputChange}
-            />
-            {errors.role && <span className="text-red-500">Role is required</span>}
-          </div>
-          <div className="mb-4">
-            <input
-              {...register("interests", { required: true })}
-              id="interests"
-              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
-              placeholder="Your Interests..."
-              value={formData.interests}
-              onChange={handleInputChange}
-            />
-            {errors.interests && <span className="text-red-500">Interests are required</span>}
-          </div>
-          <div className="mb-4">
-            <input
-              {...register("githubUsername", { required: true })}
-              id="githubUsername"
-              className="shadow appearance-none border bg-blue-50 rounded w-full py-2 px-3 text-grey-darker"
-              placeholder="Your github username... (card image will be same as github avatar)"
-              value={formData.githubUsername}
-              onChange={handleInputChange}
-            />
-            {errors.githubUsername && <span className="text-red-500">GitHub username is required</span>}
-          </div>
-          <div className="mb-4">
-            Socials
-            <button
-              type="button"
-              onClick={addSocialMediaField}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-normal text-sm px-2 rounded mx-2 "
-            >
-              Add +
-            </button>
-          </div>
-          {socialMedia.map((social, index) => (
-            <div key={index} className="mb-4 flex space-x-4">
-              <input
-                type="text"
-                placeholder="Social Media Name"
-                className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
-                value={social.name}
-                onChange={(e) => handleSocialMediaChange(index, "name", e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Social Media Link"
-                className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
-                value={social.link}
-                onChange={(e) => handleSocialMediaChange(index, "link", e.target.value)}
-              />
+            {/* Name input */}
+            <div className="mb-4">
+              <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Name:</label>
+              <input {...register("name", { required: true })} id="name" name="name" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker" placeholder="Your Name..." value={formData.name} onChange={handleInputChange} />
+              {errors.name && <span className="text-red-500">Name is required</span>}
             </div>
-          ))}
-          {showRemoveButton && (
-            <button
-              type="button"
-              onClick={() => removeSocialMediaField(socialMedia.length - 1)}
-              className="bg-blue-900  text-white font-normal text-sm px-2 mx-2 rounded mb-4"
-            >
-              Remove
-            </button>
-          )}
-          <button type="submit" className="bg-black hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mt-4 w-full">
-            Add Your E-Card
-          </button>
-        </form>
-      </div>
-        
-        <div className="w-1/2">
-          {formData && (
-            <div className="bg-indigo-950 mt-28 max-w-sm mx-auto mb-8 h-48 w-112 shadow-lg rounded-lg overflow-hidden flex items-center">
-              <img
-                className="mt-3 w-28 h-28 rounded-full mr-4 ml-4"
-                src={profilePic}
-                alt="GitHub Avatar"
-              />
-            <div className="px-4 py-6 text-white">
-              <div className="font-bold text-xl mb-2">{formData.name}</div>
-              <p className="text-sm"><b className="mr-2 mb-2">Role:</b> {formData.role}</p>
-              <p className="text-sm"><b className="mr-2 mb-2">Interests:</b> {formData.interests}</p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                  {socialMedia.map((social, index) => (
-                    social.name && social.link ? (
-                      // Separate rounded buttons for each social media link
-                      <button
-                        key={index}
-                        className="bg-blue-900 text-white font-normal text-sm px-2 rounded"
-                      >
-                        <a
-                          href={social.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-white mr-2"
-                        >
-                          {social.name} →
-                        </a>
-                      </button>
-                    ) : null
-                  ))}
-                </div>
-            </div>
-        </div>
-      )}
 
+            {/* Other input fields... */}
+            {/* Role input */}
+            <div className="mb-4">
+              <label htmlFor="role" className="block text-gray-700 text-sm font-bold mb-2">Role:</label>
+              <input {...register("role", { required: true })} id="role" name="role" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker" placeholder="Your Role..." value={formData.role} onChange={handleInputChange} />
+              {errors.role && <span className="text-red-500">Role is required</span>}
+            </div>
+
+            {/* Interests input */}
+            <div className="mb-4">
+              <label htmlFor="interests" className="block text-gray-700 text-sm font-bold mb-2">Interests:</label>
+              <input {...register("interests", { required: true })} id="interests" name="interests" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker" placeholder="Your Interests..." value={formData.interests} onChange={handleInputChange} />
+              {errors.interests && <span className="text-red-500">Interests are required</span>}
+            </div>
+
+            {/* GitHub Username input */}
+            <div className="mb-4">
+              <label htmlFor="githubUsername" className="block text-gray-700 text-sm font-bold mb-2">GitHub Username:</label>
+              <input {...register("githubUsername", { required: true })} id="githubUsername" name="githubUsername" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker" placeholder="GitHub Username..." value={formData.githubUsername} onChange={handleInputChange} />
+              {errors.githubUsername && <span className="text-red-500">GitHub username is required</span>}
+            </div>
+
+            {/* Social Media Fields */}
+            {socialMedia.map((social, index) => (
+              <div key={index} className="mb-4 flex space-x-4">
+                <input type="text" placeholder="Social Media Name" className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md" value={social.name} onChange={(e) => handleSocialMediaChange(index, "name", e.target.value)} />
+                <input type="text" placeholder="Social Media Link" className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md" value={social.link} onChange={(e) => handleSocialMediaChange(index, "link", e.target.value)} />
+                {socialMedia.length > 1 && (
+                  <button type="button" onClick={() => removeSocialMediaField(index)} className="bg-red-500 text-white font-bold py-1 px-2 rounded">X</button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={addSocialMediaField} className="mb-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add Social Media</button>
+            
+            {/* Submit button */}
+            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Add Your E-Card</button>
+          </form>
         </div>
-    </div>
-  </>
+
+        {/* Card Preview */}
+        <div id="card-preview" className="w-1/2 max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg">
+          {profilePic && <img src={profilePic} alt="GitHub Avatar" className="w-24 h-24 rounded-full mx-auto"/>}
+          <h1 className="text-center text-xl font-bold">{formData.name}</h1>
+          <p className="text-center">{formData.role}</p>
+          <p className="text-center">{formData.interests}</p>
+          <div className="flex justify-center mt-4">
+            {socialMedia.map((social, index) => (
+              social.name && social.link ? (
+                <a key={index} href={social.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-800 mx-2">{social.name}</a>
+              ) : null
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
