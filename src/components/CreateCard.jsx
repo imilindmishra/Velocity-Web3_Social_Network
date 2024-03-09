@@ -97,7 +97,7 @@ function CreateCard({ walletAddress }) {
   // Render the form if the wallet is connected
   return (
     <>
-      <NavBar walletAddress={walletAddress} />
+      
       <div className="flex justify-center">
         <div className="w-1/2">
           <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg">
