@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import html2canvas from 'html2canvas';
-import NavBar from './NavBar'; // Ensure NavBar is correctly imported
+import NavBar from './NavBar';
 import { useNavigate } from 'react-router-dom';
 
-function CreateCard({ onDataChange }) {
+function CreateCard({ walletAddress }) {
+  // Navigate function from react-router-dom
   const navigate = useNavigate();
+  // useForm hook for managing form state
   const { register, handleSubmit, formState: { errors } } = useForm();
+  // State for social media fields
   const [socialMedia, setSocialMedia] = useState([]);
+  // State for form data
   const [formData, setFormData] = useState({
     name: "",
     role: "",
@@ -16,8 +20,10 @@ function CreateCard({ onDataChange }) {
     githubUsername: "",
     socialMedia: []
   });
+  // State for the profile picture URL
   const [profilePic, setProfilePic] = useState("");
 
+  // Fetch GitHub profile picture when githubUsername changes
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (formData.githubUsername) {
@@ -30,10 +36,10 @@ function CreateCard({ onDataChange }) {
         }
       }
     };
-
     fetchUserProfile();
   }, [formData.githubUsername]);
 
+  // Function to handle input changes and update the form data state
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -42,10 +48,12 @@ function CreateCard({ onDataChange }) {
     }));
   };
 
-  function addSocialMediaField() {
+  // Function to add a new social media field
+  const addSocialMediaField = () => {
     setSocialMedia(prev => [...prev, { name: "", link: "" }]);
-  }
+  };
 
+  // Function to handle changes to social media fields
   const handleSocialMediaChange = (index, key, value) => {
     const updatedSocialMedia = socialMedia.map((item, idx) => 
       index === idx ? { ...item, [key]: value } : item
@@ -53,38 +61,43 @@ function CreateCard({ onDataChange }) {
     setSocialMedia(updatedSocialMedia);
   };
 
+  // Function to remove a social media field
   const removeSocialMediaField = (index) => {
     setSocialMedia(socialMedia.filter((_, idx) => idx !== index));
   };
 
+  // Function to handle form submission
   const onSubmit = async (data) => {
     const element = document.getElementById('card-preview');
-    html2canvas(element).then(async (canvas) => {
-      canvas.toBlob(async (blob) => {
-        const file = new File([blob], "card-image.png", { type: "image/png" });
-        const formData = new FormData();
-        formData.append('cardImage', file);
+    const canvas = await html2canvas(element);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    const file = new File([blob], "card-image.png", { type: "image/png" });
+    const formData = new FormData();
+    formData.append('cardImage', file);
 
-        try {
-          const response = await axios.post('http://localhost:5000/api/cards', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
-
-          console.log('Card added successfully!');
-          console.log(response.data); // Assuming the server responds with some data
-          // navigate('/view-cards'); // Uncomment or modify as needed
-        } catch (error) {
-          console.error('Error adding card:', error);
-        }
+    try {
+      const response = await axios.post('http://localhost:5000/api/cards', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-    });
+
+      console.log('Card added successfully!', response.data);
+      // After success, you can navigate to another route or perform other actions
+    } catch (error) {
+      console.error('Error adding card:', error);
+    }
   };
 
+  // If wallet is not connected, display a message instead of the form
+  if (!walletAddress) {
+    return <p>Please connect your wallet to create a card.</p>;
+  }
+
+  // Render the form if the wallet is connected
   return (
     <>
-      <NavBar />
+      <NavBar walletAddress={walletAddress} />
       <div className="flex justify-center">
         <div className="w-1/2">
           <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg">
