@@ -124,7 +124,7 @@ function CreateCard({ walletAddress }) {
 
   const mintNFT = async (metadataIpfsUrl) => {
     // Assuming 'web3' has been set up and 'contract' points to your smart contract
-    const contract = new web3.eth.Contract(YourSmartContractABI, '0x06Cc2C29FF6B2bb58e85f705b18830FF87D2166a');
+    const contract = new web3.eth.Contract(YourSmartContractABI, '0xa9A528d8871B2FCe5da7B841a5E8CA9D84064a8C');
     const accounts = await web3.eth.getAccounts();
     try {
       await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0] });
