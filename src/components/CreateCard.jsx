@@ -2,17 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import html2canvas from 'html2canvas';
-import NavBar from './NavBar';
-import { useNavigate } from 'react-router-dom';
+import Web3 from 'web3';
+import YourSmartContractABI from './ABI.json';
 
 function CreateCard({ walletAddress }) {
-  // Navigate function from react-router-dom
-  const navigate = useNavigate();
-  // useForm hook for managing form state
   const { register, handleSubmit, formState: { errors } } = useForm();
-  // State for social media fields
   const [socialMedia, setSocialMedia] = useState([]);
-  // State for form data
   const [formData, setFormData] = useState({
     name: "",
     role: "",
@@ -20,26 +15,17 @@ function CreateCard({ walletAddress }) {
     githubUsername: "",
     socialMedia: []
   });
-  // State for the profile picture URL
   const [profilePic, setProfilePic] = useState("");
+  const [ipfsUrl, setIpfsUrl] = useState("");
+  const [isMinting, setIsMinting] = useState(false); // State to control mint button visibility
+  const web3 = new Web3(window.ethereum);
 
-  // Fetch GitHub profile picture when githubUsername changes
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (formData.githubUsername) {
-        try {
-          const response = await axios.get(`https://api.github.com/users/${formData.githubUsername}`);
-          setProfilePic(response.data.avatar_url);
-        } catch (error) {
-          console.error("Error fetching GitHub profile:", error);
-          setProfilePic(""); // Reset or set to a default image if there's an error
-        }
-      }
-    };
-    fetchUserProfile();
-  }, [formData.githubUsername]);
+    if (window.ethereum) {
+      window.ethereum.enable();
+    }
+  }, []);
 
-  // Function to handle input changes and update the form data state
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -48,12 +34,10 @@ function CreateCard({ walletAddress }) {
     }));
   };
 
-  // Function to add a new social media field
   const addSocialMediaField = () => {
     setSocialMedia(prev => [...prev, { name: "", link: "" }]);
   };
 
-  // Function to handle changes to social media fields
   const handleSocialMediaChange = (index, key, value) => {
     const updatedSocialMedia = socialMedia.map((item, idx) => 
       index === idx ? { ...item, [key]: value } : item
@@ -61,39 +45,99 @@ function CreateCard({ walletAddress }) {
     setSocialMedia(updatedSocialMedia);
   };
 
-  // Function to remove a social media field
   const removeSocialMediaField = (index) => {
     setSocialMedia(socialMedia.filter((_, idx) => idx !== index));
   };
 
-  // Function to handle form submission
   const onSubmit = async (data) => {
     const element = document.getElementById('card-preview');
     const canvas = await html2canvas(element);
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+  
+    // Convert Blob to File directly in the browser
     const file = new File([blob], "card-image.png", { type: "image/png" });
+  
+    // Prepare FormData to upload file
     const formData = new FormData();
-    formData.append('cardImage', file);
-
+    formData.append('file', file);
+  
+    // Set Pinata API endpoint
+    const pinataEndpoint = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+  
+    // Set headers for Pinata API request
+    const headers = {
+      pinata_api_key: '46b0fa147177770f0ee0', // Replace with your actual API key
+      pinata_secret_api_key: '87178730d50d9fd901ed7b7c3ac7435ac265f91844ab61db1594a23d41a2a4e7', // Replace with your actual secret key
+    };
+  
     try {
-      const response = await axios.post('http://localhost:5000/api/cards', formData, {
+      // Directly upload the image to Pinata from the client
+      const imageResponse = await axios.post(pinataEndpoint, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+          ...headers,
+          'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+        }
       });
-
-      console.log('Card added successfully!', response.data);
-      // After success, you can navigate to another route or perform other actions
+  
+      console.log('Card image added successfully!', imageResponse.data);
+      const imageIpfsUrl = `https://gateway.pinata.cloud/ipfs/${imageResponse.data.IpfsHash}`;
+  
+      // Create metadata
+      const metadata = {
+        name: formData.name,
+        description: "A brief description here", // Customize your description
+        image: imageIpfsUrl,
+        attributes: [
+          // Add any custom attributes here
+          { trait_type: "Role", value: formData.role },
+          { trait_type: "Interests", value: formData.interests },
+          // Add more attributes as needed
+        ]
+      };
+  
+      // Convert metadata object to blob
+      const metadataBlob = new Blob([JSON.stringify(metadata)], {type: "application/json"});
+      const metadataFile = new File([metadataBlob], "metadata.json", { type: "application/json" });
+  
+      // Prepare FormData for metadata
+      const metadataFormData = new FormData();
+      metadataFormData.append('file', metadataFile);
+  
+      // Upload metadata to Pinata
+      const metadataResponse = await axios.post(pinataEndpoint, metadataFormData, {
+        headers: {
+          ...headers,
+          'Content-Type': `multipart/form-data; boundary=${metadataFormData._boundary}`,
+        }
+      });
+  
+      console.log('Metadata added successfully!', metadataResponse.data);
+      const metadataIpfsUrl = `https://gateway.pinata.cloud/ipfs/${metadataResponse.data.IpfsHash}`;
+      setIpfsUrl(metadataIpfsUrl);
+      setIsMinting(true); // Show the mint button after successful upload and IPFS pinning
     } catch (error) {
-      console.error('Error adding card:', error);
+      console.error('Error adding card or metadata:', error);
     }
   };
+  
 
-  // If wallet is not connected, display a message instead of the form
+  const mintNFT = async (metadataIpfsUrl) => {
+    // Assuming 'web3' has been set up and 'contract' points to your smart contract
+    const contract = new web3.eth.Contract(YourSmartContractABI, '0x06Cc2C29FF6B2bb58e85f705b18830FF87D2166a');
+    const accounts = await web3.eth.getAccounts();
+    try {
+      await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0] });
+      console.log('NFT minted successfully!');
+      // Proceed with any follow-up actions after successful minting...
+    } catch (error) {
+      console.error('Error minting NFT:', error);
+    }
+  };
+  
+
   if (!walletAddress) {
     return <p>Please connect your wallet to create a card.</p>;
   }
-
   // Render the form if the wallet is connected
   return (
     <>
@@ -161,6 +205,14 @@ function CreateCard({ walletAddress }) {
             ))}
           </div>
         </div>
+        {/* Conditionally render the Mint button */}
+      {isMinting && (
+        <div className="flex justify-center mt-4">
+          <button onClick={() => mintNFT(ipfsUrl)} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            Mint Your E-Dev Card
+          </button>
+        </div>
+      )}
       </div>
     </>
   );
