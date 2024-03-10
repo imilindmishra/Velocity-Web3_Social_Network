@@ -28,6 +28,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Pinata API credentials (should be env variables for security)
+const PINATA_API_KEY = '46b0fa147177770f0ee0';
+const PINATA_API_SECRET = '87178730d50d9fd901ed7b7c3ac7435ac265f91844ab61db1594a23d41a2a4e7';
+
 // Endpoint to handle file uploads and IPFS pinning
 app.post('/api/cards', upload.single('cardImage'), async (req, res) => {
   if (!req.file) {
@@ -39,12 +43,23 @@ app.post('/api/cards', upload.single('cardImage'), async (req, res) => {
   console.log(`File path: ${filePath}`);
 
   try {
+    // Pin file to IPFS
     const pinataResponse = await pinFileToIPFS(filePath);
-    const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${pinataResponse.IpfsHash}`;
-    console.log("File pinned at IPFS URL:", ipfsUrl);
+    const imageIpfsUrl = `https://gateway.pinata.cloud/ipfs/${pinataResponse.IpfsHash}`;
+    console.log("File pinned at IPFS URL:", imageIpfsUrl);
 
-    // Respond with the IPFS URL
-    res.json({ success: true, message: "File uploaded and pinned successfully", ipfsUrl });
+    // Create metadata JSON object
+    const metadata = {
+      name: "Developer Card",
+      description: "A card representing a developer.",
+      image: imageIpfsUrl
+    };
+
+    // Pin metadata to IPFS
+    const metadataResponse = await pinJSONToIPFS(metadata);
+
+    // Respond with the IPFS URL of the metadata
+    res.json({ success: true, ipfsUrl: metadataResponse.ipfsUrl });
 
     // Cleanup after successful pinning
     fs.unlink(filePath, (err) => {
@@ -57,15 +72,11 @@ app.post('/api/cards', upload.single('cardImage'), async (req, res) => {
   }
 });
 
-// Pinata IPFS pinning function
+// Function to pin files to IPFS
 async function pinFileToIPFS(filePath) {
   const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
   let data = new FormData();
   data.append('file', fs.createReadStream(filePath));
-
-  // Replace with your Pinata API Key and Secret
-  const PINATA_API_KEY = '46b0fa147177770f0ee0';
-  const PINATA_API_SECRET = '87178730d50d9fd901ed7b7c3ac7435ac265f91844ab61db1594a23d41a2a4e7';
 
   const options = {
     method: 'POST',
@@ -81,6 +92,33 @@ async function pinFileToIPFS(filePath) {
   try {
     const response = await axios(options);
     return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Function to pin JSON to IPFS
+async function pinJSONToIPFS(json) {
+  const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
+  const data = {
+    pinataContent: json
+  };
+
+  const options = {
+    method: 'POST',
+    url: url,
+    headers: {
+      'pinata_api_key': PINATA_API_KEY,
+      'pinata_secret_api_key': PINATA_API_SECRET
+    },
+    data: data,
+  };
+
+  try {
+    const response = await axios(options);
+    const metadataIpfsHash = response.data.IpfsHash;
+    const metadataIpfsUrl = `https://gateway.pinata.cloud/ipfs/${metadataIpfsHash}`;
+    return { ipfsUrl: metadataIpfsUrl, ipfsHash: metadataIpfsHash };
   } catch (error) {
     throw error;
   }

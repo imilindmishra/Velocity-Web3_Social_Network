@@ -73,23 +73,14 @@ function CreateCard({ walletAddress }) {
     }
   };
 
-  const mintNFT = async (ipfsUrl) => {
+  const mintNFT = async (metadataIpfsUrl) => {
+    // Assuming 'web3' has been set up and 'contract' points to your smart contract
     const contract = new web3.eth.Contract(YourSmartContractABI, '0x06Cc2C29FF6B2bb58e85f705b18830FF87D2166a');
+    const accounts = await web3.eth.getAccounts();
     try {
-      const accounts = await web3.eth.getAccounts();
-      // Send transaction without specifying gasPrice to let MetaMask handle it
-      const transaction = contract.methods.mintCard(accounts[0], ipfsUrl);
-      
-      // Estimate gas limit to ensure the transaction doesn't run out of gas
-      const estimatedGas = await transaction.estimateGas({ from: accounts[0] });
-  
-      // Send the transaction
-      await transaction.send({
-        from: accounts[0],
-        gas: estimatedGas
-      });
-  
+      await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0] });
       console.log('NFT minted successfully!');
+      // Proceed with any follow-up actions after successful minting...
     } catch (error) {
       console.error('Error minting NFT:', error);
     }
