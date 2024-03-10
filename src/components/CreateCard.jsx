@@ -80,22 +80,22 @@ function CreateCard({ walletAddress }) {
       });
   
       console.log('Card image added successfully!', imageResponse.data);
+      // Update to use HTTPS gateway URL for broader compatibility
       const imageIpfsUrl = `https://gateway.pinata.cloud/ipfs/${imageResponse.data.IpfsHash}`;
   
       // Create metadata
       const metadata = {
         name: formData.name,
         description: "A brief description here", // Customize your description
-        image: imageIpfsUrl,
+        image: imageIpfsUrl, // Use HTTPS URL for the image
         attributes: [
-          // Add any custom attributes here
           { trait_type: "Role", value: formData.role },
           { trait_type: "Interests", value: formData.interests },
           // Add more attributes as needed
         ]
       };
   
-      // Convert metadata object to blob
+      // Convert metadata object to blob for the upload
       const metadataBlob = new Blob([JSON.stringify(metadata)], {type: "application/json"});
       const metadataFile = new File([metadataBlob], "metadata.json", { type: "application/json" });
   
@@ -112,8 +112,9 @@ function CreateCard({ walletAddress }) {
       });
   
       console.log('Metadata added successfully!', metadataResponse.data);
+      // Use the IPFS URL for metadata in the NFT minting function
       const metadataIpfsUrl = `https://gateway.pinata.cloud/ipfs/${metadataResponse.data.IpfsHash}`;
-      setIpfsUrl(metadataIpfsUrl);
+      setIpfsUrl(metadataIpfsUrl); // Update state with the URL of the metadata
       setIsMinting(true); // Show the mint button after successful upload and IPFS pinning
     } catch (error) {
       console.error('Error adding card or metadata:', error);
