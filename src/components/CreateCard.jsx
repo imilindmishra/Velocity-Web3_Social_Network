@@ -53,25 +53,73 @@ function CreateCard({ walletAddress }) {
     const element = document.getElementById('card-preview');
     const canvas = await html2canvas(element);
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+  
+    // Convert Blob to File directly in the browser
     const file = new File([blob], "card-image.png", { type: "image/png" });
+  
+    // Prepare FormData to upload file
     const formData = new FormData();
-    formData.append('cardImage', file);
-    formData.append('recipientAddress', walletAddress);
-
+    formData.append('file', file);
+  
+    // Set Pinata API endpoint
+    const pinataEndpoint = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+  
+    // Set headers for Pinata API request
+    const headers = {
+      pinata_api_key: '46b0fa147177770f0ee0', // Replace with your actual API key
+      pinata_secret_api_key: '87178730d50d9fd901ed7b7c3ac7435ac265f91844ab61db1594a23d41a2a4e7', // Replace with your actual secret key
+    };
+  
     try {
-      const response = await axios.post('http://localhost:5000/api/cards', formData, {
+      // Directly upload the image to Pinata from the client
+      const imageResponse = await axios.post(pinataEndpoint, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+          ...headers,
+          'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+        }
       });
-
-      console.log('Card added successfully!', response.data);
-      setIpfsUrl(response.data.ipfsUrl);
+  
+      console.log('Card image added successfully!', imageResponse.data);
+      const imageIpfsUrl = `https://gateway.pinata.cloud/ipfs/${imageResponse.data.IpfsHash}`;
+  
+      // Create metadata
+      const metadata = {
+        name: formData.name,
+        description: "A brief description here", // Customize your description
+        image: imageIpfsUrl,
+        attributes: [
+          // Add any custom attributes here
+          { trait_type: "Role", value: formData.role },
+          { trait_type: "Interests", value: formData.interests },
+          // Add more attributes as needed
+        ]
+      };
+  
+      // Convert metadata object to blob
+      const metadataBlob = new Blob([JSON.stringify(metadata)], {type: "application/json"});
+      const metadataFile = new File([metadataBlob], "metadata.json", { type: "application/json" });
+  
+      // Prepare FormData for metadata
+      const metadataFormData = new FormData();
+      metadataFormData.append('file', metadataFile);
+  
+      // Upload metadata to Pinata
+      const metadataResponse = await axios.post(pinataEndpoint, metadataFormData, {
+        headers: {
+          ...headers,
+          'Content-Type': `multipart/form-data; boundary=${metadataFormData._boundary}`,
+        }
+      });
+  
+      console.log('Metadata added successfully!', metadataResponse.data);
+      const metadataIpfsUrl = `https://gateway.pinata.cloud/ipfs/${metadataResponse.data.IpfsHash}`;
+      setIpfsUrl(metadataIpfsUrl);
       setIsMinting(true); // Show the mint button after successful upload and IPFS pinning
     } catch (error) {
-      console.error('Error adding card:', error);
+      console.error('Error adding card or metadata:', error);
     }
   };
+  
 
   const mintNFT = async (metadataIpfsUrl) => {
     // Assuming 'web3' has been set up and 'contract' points to your smart contract
