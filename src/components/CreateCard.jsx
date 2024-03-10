@@ -2,17 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import html2canvas from 'html2canvas';
-import NavBar from './NavBar';
-import { useNavigate } from 'react-router-dom';
+import Web3 from 'web3';
+import YourSmartContractABI from './ABI.json';
 
 function CreateCard({ walletAddress }) {
-  // Navigate function from react-router-dom
-  const navigate = useNavigate();
-  // useForm hook for managing form state
   const { register, handleSubmit, formState: { errors } } = useForm();
-  // State for social media fields
   const [socialMedia, setSocialMedia] = useState([]);
-  // State for form data
   const [formData, setFormData] = useState({
     name: "",
     role: "",
@@ -20,26 +15,17 @@ function CreateCard({ walletAddress }) {
     githubUsername: "",
     socialMedia: []
   });
-  // State for the profile picture URL
   const [profilePic, setProfilePic] = useState("");
+  const [ipfsUrl, setIpfsUrl] = useState("");
+  const [isMinting, setIsMinting] = useState(false); // State to control mint button visibility
+  const web3 = new Web3(window.ethereum);
 
-  // Fetch GitHub profile picture when githubUsername changes
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (formData.githubUsername) {
-        try {
-          const response = await axios.get(`https://api.github.com/users/${formData.githubUsername}`);
-          setProfilePic(response.data.avatar_url);
-        } catch (error) {
-          console.error("Error fetching GitHub profile:", error);
-          setProfilePic(""); // Reset or set to a default image if there's an error
-        }
-      }
-    };
-    fetchUserProfile();
-  }, [formData.githubUsername]);
+    if (window.ethereum) {
+      window.ethereum.enable();
+    }
+  }, []);
 
-  // Function to handle input changes and update the form data state
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -48,12 +34,10 @@ function CreateCard({ walletAddress }) {
     }));
   };
 
-  // Function to add a new social media field
   const addSocialMediaField = () => {
     setSocialMedia(prev => [...prev, { name: "", link: "" }]);
   };
 
-  // Function to handle changes to social media fields
   const handleSocialMediaChange = (index, key, value) => {
     const updatedSocialMedia = socialMedia.map((item, idx) => 
       index === idx ? { ...item, [key]: value } : item
@@ -61,12 +45,10 @@ function CreateCard({ walletAddress }) {
     setSocialMedia(updatedSocialMedia);
   };
 
-  // Function to remove a social media field
   const removeSocialMediaField = (index) => {
     setSocialMedia(socialMedia.filter((_, idx) => idx !== index));
   };
 
-  // Function to handle form submission
   const onSubmit = async (data) => {
     const element = document.getElementById('card-preview');
     const canvas = await html2canvas(element);
@@ -74,6 +56,7 @@ function CreateCard({ walletAddress }) {
     const file = new File([blob], "card-image.png", { type: "image/png" });
     const formData = new FormData();
     formData.append('cardImage', file);
+    formData.append('recipientAddress', walletAddress);
 
     try {
       const response = await axios.post('http://localhost:5000/api/cards', formData, {
@@ -83,21 +66,43 @@ function CreateCard({ walletAddress }) {
       });
 
       console.log('Card added successfully!', response.data);
-      // After success, you can navigate to another route or perform other actions
+      setIpfsUrl(response.data.ipfsUrl);
+      setIsMinting(true); // Show the mint button after successful upload and IPFS pinning
     } catch (error) {
       console.error('Error adding card:', error);
     }
   };
 
-  // If wallet is not connected, display a message instead of the form
+  const mintNFT = async (ipfsUrl) => {
+    const contract = new web3.eth.Contract(YourSmartContractABI, '0x06Cc2C29FF6B2bb58e85f705b18830FF87D2166a');
+    try {
+      const accounts = await web3.eth.getAccounts();
+      // Send transaction without specifying gasPrice to let MetaMask handle it
+      const transaction = contract.methods.mintCard(accounts[0], ipfsUrl);
+      
+      // Estimate gas limit to ensure the transaction doesn't run out of gas
+      const estimatedGas = await transaction.estimateGas({ from: accounts[0] });
+  
+      // Send the transaction
+      await transaction.send({
+        from: accounts[0],
+        gas: estimatedGas
+      });
+  
+      console.log('NFT minted successfully!');
+    } catch (error) {
+      console.error('Error minting NFT:', error);
+    }
+  };
+  
+
   if (!walletAddress) {
     return <p>Please connect your wallet to create a card.</p>;
   }
-
   // Render the form if the wallet is connected
   return (
     <>
-      <NavBar walletAddress={walletAddress} />
+      
       <div className="flex justify-center">
         <div className="w-1/2">
           <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg">
@@ -161,6 +166,14 @@ function CreateCard({ walletAddress }) {
             ))}
           </div>
         </div>
+        {/* Conditionally render the Mint button */}
+      {isMinting && (
+        <div className="flex justify-center mt-4">
+          <button onClick={() => mintNFT(ipfsUrl)} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            Mint Your E-Dev Card
+          </button>
+        </div>
+      )}
       </div>
     </>
   );

@@ -7,7 +7,7 @@ import LandingButton from './components/LandingButton'
 const Home = () => {
     return (
         <>
-            <NavBar />
+            
             <LandingButton />
                    
 
