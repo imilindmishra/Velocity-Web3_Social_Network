@@ -39,7 +39,7 @@ function CreateCard({ walletAddress }) {
   };
 
   const handleSocialMediaChange = (index, key, value) => {
-    const updatedSocialMedia = socialMedia.map((item, idx) => 
+    const updatedSocialMedia = socialMedia.map((item, idx) =>
       index === idx ? { ...item, [key]: value } : item
     );
     setSocialMedia(updatedSocialMedia);
@@ -53,23 +53,23 @@ function CreateCard({ walletAddress }) {
     const element = document.getElementById('card-preview');
     const canvas = await html2canvas(element);
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-  
+
     // Convert Blob to File directly in the browser
     const file = new File([blob], "card-image.png", { type: "image/png" });
-  
+
     // Prepare FormData to upload file
     const formData = new FormData();
     formData.append('file', file);
-  
+
     // Set Pinata API endpoint
     const pinataEndpoint = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
-  
+
     // Set headers for Pinata API request
     const headers = {
-      pinata_api_key: '46b0fa147177770f0ee0', // Replace with your actual API key
-      pinata_secret_api_key: '87178730d50d9fd901ed7b7c3ac7435ac265f91844ab61db1594a23d41a2a4e7', // Replace with your actual secret key
+      pinata_api_key: import.meta.env.VITE_PINATA_API_KEY,
+      pinata_secret_api_key: import.meta.env.VITE_PINATA_SECRET_API_KEY,
     };
-  
+
     try {
       // Directly upload the image to Pinata from the client
       const imageResponse = await axios.post(pinataEndpoint, formData, {
@@ -78,11 +78,11 @@ function CreateCard({ walletAddress }) {
           'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
         }
       });
-  
+
       console.log('Card image added successfully!', imageResponse.data);
       // Update to use HTTPS gateway URL for broader compatibility
       const imageIpfsUrl = `https://gateway.pinata.cloud/ipfs/${imageResponse.data.IpfsHash}`;
-  
+
       // Create metadata
       const metadata = {
         name: formData.name,
@@ -94,15 +94,15 @@ function CreateCard({ walletAddress }) {
           // Add more attributes as needed
         ]
       };
-  
+
       // Convert metadata object to blob for the upload
-      const metadataBlob = new Blob([JSON.stringify(metadata)], {type: "application/json"});
+      const metadataBlob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
       const metadataFile = new File([metadataBlob], "metadata.json", { type: "application/json" });
-  
+
       // Prepare FormData for metadata
       const metadataFormData = new FormData();
       metadataFormData.append('file', metadataFile);
-  
+
       // Upload metadata to Pinata
       const metadataResponse = await axios.post(pinataEndpoint, metadataFormData, {
         headers: {
@@ -110,7 +110,7 @@ function CreateCard({ walletAddress }) {
           'Content-Type': `multipart/form-data; boundary=${metadataFormData._boundary}`,
         }
       });
-  
+
       console.log('Metadata added successfully!', metadataResponse.data);
       // Use the IPFS URL for metadata in the NFT minting function
       const metadataIpfsUrl = `https://gateway.pinata.cloud/ipfs/${metadataResponse.data.IpfsHash}`;
@@ -120,11 +120,11 @@ function CreateCard({ walletAddress }) {
       console.error('Error adding card or metadata:', error);
     }
   };
-  
+
 
   const mintNFT = async (metadataIpfsUrl) => {
     // Assuming 'web3' has been set up and 'contract' points to your smart contract
-    const contract = new web3.eth.Contract(YourSmartContractABI, '0xa9A528d8871B2FCe5da7B841a5E8CA9D84064a8C');
+    const contract = new web3.eth.Contract(YourSmartContractABI, import.meta.env.VITE_SMART_CONTRACT_ADDRESS);
     const accounts = await web3.eth.getAccounts();
     try {
       await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0] });
@@ -134,7 +134,7 @@ function CreateCard({ walletAddress }) {
       console.error('Error minting NFT:', error);
     }
   };
-  
+
 
   if (!walletAddress) {
     return <p>Please connect your wallet to create a card.</p>;
@@ -142,7 +142,7 @@ function CreateCard({ walletAddress }) {
   // Render the form if the wallet is connected
   return (
     <>
-      
+
       <div className="flex justify-center">
         <div className="w-1/2">
           <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg">
@@ -186,7 +186,7 @@ function CreateCard({ walletAddress }) {
               </div>
             ))}
             <button type="button" onClick={addSocialMediaField} className="mb-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add Social Media</button>
-            
+
             {/* Submit button */}
             <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Add Your E-Card</button>
           </form>
@@ -194,7 +194,7 @@ function CreateCard({ walletAddress }) {
 
         {/* Card Preview */}
         <div id="card-preview" className="w-1/2 max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg">
-          {profilePic && <img src={profilePic} alt="GitHub Avatar" className="w-24 h-24 rounded-full mx-auto"/>}
+          {profilePic && <img src={profilePic} alt="GitHub Avatar" className="w-24 h-24 rounded-full mx-auto" />}
           <h1 className="text-center text-xl font-bold">{formData.name}</h1>
           <p className="text-center">{formData.role}</p>
           <p className="text-center">{formData.interests}</p>
@@ -207,13 +207,13 @@ function CreateCard({ walletAddress }) {
           </div>
         </div>
         {/* Conditionally render the Mint button */}
-      {isMinting && (
-        <div className="flex justify-center mt-4">
-          <button onClick={() => mintNFT(ipfsUrl)} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-            Mint Your E-Dev Card
-          </button>
-        </div>
-      )}
+        {isMinting && (
+          <div className="flex justify-center mt-4">
+            <button onClick={() => mintNFT(ipfsUrl)} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+              Mint Your E-Dev Card
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
