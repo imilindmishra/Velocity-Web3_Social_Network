@@ -29,13 +29,13 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDLG9AQuZpFhyE-b3TvKASzTRpM3-_d47g",
-  authDomain: "layer-24a25.firebaseapp.com",
-  projectId: "layer-24a25",
-  storageBucket: "layer-24a25.appspot.com",
-  messagingSenderId: "407246477458",
-  appId: "1:407246477458:web:43560535d599873fbd2e4b",
-  measurementId: "G-WEKPHG0RE3"
+  apiKey: "AIzaSyDU-4Y0nXdzwUwk5FdF7bWUfkxlTd1ckC0",
+  authDomain: "layer-2f7d1.firebaseapp.com",
+  projectId: "layer-2f7d1",
+  storageBucket: "layer-2f7d1.appspot.com",
+  messagingSenderId: "53476646687",
+  appId: "1:53476646687:web:991e1491e8675622a81a2a",
+  measurementId: "G-W6Z7Y1T697"
 };
 
 const app = initializeApp(firebaseConfig);
