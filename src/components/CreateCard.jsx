@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import html2canvas from 'html2canvas';
@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 function CreateCard({ walletAddress }) {
+  const navigate = useNavigate()
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [socialMedia, setSocialMedia] = useState([]);
   const [formData, setFormData] = useState({
@@ -122,7 +123,6 @@ function CreateCard({ walletAddress }) {
       console.error('Error adding card or metadata:', error);
     }
   };
-
 
   const mintNFT = async (metadataIpfsUrl) => {
     const contract = new web3.eth.Contract(YourSmartContractABI, import.meta.env.VITE_SMART_CONTRACT_ADDRESS);
