@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form';
 import html2canvas from 'html2canvas';
 import Web3 from 'web3';
 import YourSmartContractABI from './ABI.json';
+import { useNavigate } from 'react-router-dom';
+
 
 function CreateCard({ walletAddress }) {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -123,17 +125,17 @@ function CreateCard({ walletAddress }) {
 
 
   const mintNFT = async (metadataIpfsUrl) => {
-    // Assuming 'web3' has been set up and 'contract' points to your smart contract
     const contract = new web3.eth.Contract(YourSmartContractABI, import.meta.env.VITE_SMART_CONTRACT_ADDRESS);
     const accounts = await web3.eth.getAccounts();
     try {
       await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0] });
       console.log('NFT minted successfully!');
-      // Proceed with any follow-up actions after successful minting...
+      navigate('/mint-success'); // Redirect to MintSuccess page
     } catch (error) {
       console.error('Error minting NFT:', error);
     }
   };
+  
 
 
   if (!walletAddress) {
