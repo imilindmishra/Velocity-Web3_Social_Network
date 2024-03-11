@@ -13,29 +13,29 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
         const signer = provider.getSigner();
         setWalletAddress(await signer.getAddress());
         
-        // Attempt to switch to the Polygon network
+        // Attempt to switch to the Polygon Mumbai test network
         try {
-          await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(137) }]);
-          setNetworkName('Polygon Mainnet');
+          await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(80001) }]);
+          setNetworkName('Polygon Mumbai Testnet');
         } catch (switchError) {
           // This error code indicates that the chain has not been added to MetaMask.
           if (switchError.code === 4902) {
             try {
-              // Add the Polygon chain to MetaMask
+              // Add the Polygon Mumbai test network to MetaMask
               await provider.send("wallet_addEthereumChain", [{
-                chainId: ethers.utils.hexValue(137),
-                chainName: 'Polygon Mainnet',
-                rpcUrls: ['https://polygon-rpc.com/'],
-                blockExplorerUrls: ['https://polygonscan.com/'],
+                chainId: ethers.utils.hexValue(80001),
+                chainName: 'Polygon Mumbai Testnet',
+                rpcUrls: ['https://rpc-mumbai.maticvigil.com/'], // Use an appropriate RPC URL for Mumbai
+                blockExplorerUrls: ['https://mumbai.polygonscan.com/'],
                 nativeCurrency: {
                   name: 'MATIC',
                   symbol: 'MATIC',
                   decimals: 18,
                 },
               }]);
-              setNetworkName('Polygon Mainnet');
+              setNetworkName('Polygon Mumbai Testnet');
             } catch (addError) {
-              console.error('Error adding Polygon network:', addError);
+              console.error('Error adding Polygon Mumbai network:', addError);
             }
           } else {
             console.error('Error switching network:', switchError);
@@ -48,6 +48,7 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
       alert('Please install MetaMask!');
     }
   };
+  
 
   const disconnectWalletHandler = () => {
     setWalletAddress('');
