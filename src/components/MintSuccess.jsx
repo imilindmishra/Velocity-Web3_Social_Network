@@ -70,6 +70,7 @@ function MintSuccess({ userName, walletAddress }) {
     } catch (error) {
       console.error("Error adding tweet: ", error);
     }
+    setNewTweet('')
   };
   
 

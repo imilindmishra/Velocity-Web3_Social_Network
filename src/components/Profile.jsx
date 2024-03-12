@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import Web3 from 'web3';
 import { db } from '../firebaseConfig';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
@@ -7,6 +8,12 @@ const Profile = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [metadata, setMetadata] = useState(null);
   const [tweets, setTweets] = useState([]);
+  const [userComments, setUserComments] = useState([]);
+  const navigate = useNavigate(); // Initialize useNavigate
+
+  const goToMintSuccess = () => {
+    navigate('/mint-success'); // Navigate to MintSuccess component
+  };
 
   useEffect(() => {
     const fetchWalletAddress = async () => {
@@ -35,31 +42,41 @@ const Profile = () => {
   }, []);
 
   useEffect(() => {
-    // Listen for new tweets and update state
-    const q = query(collection(db, "tweets"), orderBy("timestamp", "desc"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const tweetsArray = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setTweets(tweetsArray);
-    });
+  if (!walletAddress) {
+    return; // If walletAddress is not defined, exit the effect
+  }
 
-    // Cleanup listener on component unmount
-    return () => unsubscribe();
-  }, []);
+  // Listen for new tweets and update state
+  const q = query(collection(db, "tweets"), orderBy("timestamp", "desc"));
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const tweetsArray = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setTweets(tweetsArray);
+
+    // Collect all comments made by the current user's wallet address
+    const userCommentsArray = tweetsArray.reduce((acc, tweet) => {
+      if (tweet.comments) {
+        const userComments = tweet.comments.filter(comment => comment.walletAddress === walletAddress);
+        return [...acc, ...userComments];
+      }
+      return acc;
+    }, []);
+    setUserComments(userCommentsArray);
+  });
+
+  // Cleanup listener on component unmount
+  return () => unsubscribe();
+}, [walletAddress]); // Remove userComments from the dependency array
 
   return (
     <div>
+    <button onClick={goToMintSuccess}>Go to Tweets </button> 
       <h2>Your Profile</h2>
       {walletAddress && (
         <div>
           <p>Wallet Address: {walletAddress}</p>
-          {metadata && (
-            <div>
-              {/* Display metadata fields */}
-            </div>
-          )}
           <div>
             <h3>Your Tweets</h3>
             {tweets.map((tweet) => (
@@ -68,6 +85,16 @@ const Profile = () => {
               </div>
             ))}
           </div>
+          {userComments.length > 0 && (
+            <div>
+              <h3>Your Comments</h3>
+              {userComments.map((comment, index) => (
+                <div key={index}>
+                  <p>{comment.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
