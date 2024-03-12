@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, doc, updateDoc, increment, orderBy, query, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, increment, arrayUnion, orderBy, query, onSnapshot } from 'firebase/firestore';
 
 function MintSuccess({ userName, walletAddress }) {
   const [showPrompt, setShowPrompt] = useState(true);
   const [newTweet, setNewTweet] = useState('');
+  const [newComment, setNewComment] = useState(''); 
   const [likes, setLikes] = useState({});
   const [tweets, setTweets] = useState([]);
   const [likedTweets, setLikedTweets] = useState({});
@@ -94,6 +95,24 @@ function MintSuccess({ userName, walletAddress }) {
     }
   };
 
+  const handleCommentSubmit = async (tweetId, comment) => {
+    if (!comment || comment.trim() === '') return;
+  
+    const tweetRef = doc(db, 'tweets', tweetId);
+    try {
+      await updateDoc(tweetRef, {
+        comments: arrayUnion({
+          text: comment,
+          createdAt: new Date(),
+        }),
+      });
+  
+      setNewComment(prevComments => ({ ...prevComments, [tweetId]: '' }));
+    } catch (error) {
+      console.error("Error adding comment: ", error);
+    }
+  };
+
   return (
     <>
       {showPrompt && (
@@ -119,6 +138,13 @@ function MintSuccess({ userName, walletAddress }) {
               {userName}
               <button onClick={() => handleLike(tweet.id)} className="btn btn-primary">Like</button>
               <p>{likes[tweet.id] || 0} Likes</p>
+              <textarea
+              className="textarea textarea-bordered w-full mb-2"
+              placeholder="Write a comment..."
+              value={newComment[tweet.id] || ''}
+              onChange={(e) => setNewComment(prevComments => ({ ...prevComments, [tweet.id]: e.target.value }))}
+             ></textarea>
+             <button onClick={() => handleCommentSubmit(tweet.id, newComment[tweet.id])} className="btn btn-primary">Post Comment</button>
             </div>
           ))}
         </div>
@@ -126,5 +152,4 @@ function MintSuccess({ userName, walletAddress }) {
     </>
   );
 }
-
 export default MintSuccess;
