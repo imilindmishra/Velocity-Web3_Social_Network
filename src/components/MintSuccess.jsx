@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, orderBy, query, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, increment, orderBy, query, onSnapshot } from 'firebase/firestore';
 
 function MintSuccess({ userName, walletAddress }) {
   const [showPrompt, setShowPrompt] = useState(true);
   const [newTweet, setNewTweet] = useState('');
+  const [likes, setLikes] = useState({});
   const [tweets, setTweets] = useState([]);
+  const [likedTweets, setLikedTweets] = useState({});
 
   useEffect(() => {
     // Launch confetti animation
@@ -50,6 +52,48 @@ function MintSuccess({ userName, walletAddress }) {
     }
   };
 
+  const handleLike = async (tweetId) => {
+    // Get a reference to the tweet document
+    const tweetRef = doc(db, 'tweets', tweetId);
+  
+    if (likedTweets[tweetId]) {
+      // If the tweet has already been liked, unlike it
+      setLikedTweets((prevLikedTweets) => {
+        const newLikedTweets = { ...prevLikedTweets };
+        delete newLikedTweets[tweetId];
+        return newLikedTweets;
+      });
+  
+      // Decrement the likes field of the tweet document
+      await updateDoc(tweetRef, {
+        likes: increment(-1),
+      });
+  
+      // Update the local state
+      setLikes((prevLikes) => ({
+        ...prevLikes,
+        [tweetId]: prevLikes[tweetId] - 1,
+      }));
+    } else {
+      // If the tweet has not been liked, like it
+      setLikedTweets((prevLikedTweets) => ({
+        ...prevLikedTweets,
+        [tweetId]: true,
+      }));
+  
+      // Increment the likes field of the tweet document
+      await updateDoc(tweetRef, {
+        likes: increment(1),
+      });
+  
+      // Update the local state
+      setLikes((prevLikes) => ({
+        ...prevLikes,
+        [tweetId]: (prevLikes[tweetId] || 0) + 1,
+      }));
+    }
+  };
+
   return (
     <>
       {showPrompt && (
@@ -72,6 +116,9 @@ function MintSuccess({ userName, walletAddress }) {
           {tweets.map((tweet) => (
             <div key={tweet.id} className="bg-gray-100 p-4 rounded-lg mb-4">
               {tweet.content}
+              {userName}
+              <button onClick={() => handleLike(tweet.id)} className="btn btn-primary">Like</button>
+              <p>{likes[tweet.id] || 0} Likes</p>
             </div>
           ))}
         </div>
