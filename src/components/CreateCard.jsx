@@ -1,30 +1,34 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useForm } from 'react-hook-form';
-import html2canvas from 'html2canvas';
-import Web3 from 'web3';
-import YourSmartContractABI from './ABI.json';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useForm } from "react-hook-form";
+import html2canvas from "html2canvas";
+import Web3 from "web3";
+import YourSmartContractABI from "./ABI.json";
+import { useNavigate } from "react-router-dom";
 import.meta.env;
 
 function CreateCard({ walletAddress }) {
-  const navigate = useNavigate()
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
   const [socialMedia, setSocialMedia] = useState([]);
-  const [githubUsername, setGithubUsername] = useState('');
-  const [inputGithubUsername, setInputGithubUsername] = useState('');
+  const [githubUsername, setGithubUsername] = useState("");
+  const [inputGithubUsername, setInputGithubUsername] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     role: "",
     interests: "",
     githubUsername: "",
-    socialMedia: []
+    socialMedia: [],
   });
   const [profilePic, setProfilePic] = useState("");
   const [ipfsUrl, setIpfsUrl] = useState("");
   const [isMinting, setIsMinting] = useState(false); // State to control mint button visibility
   const web3 = new Web3(window.ethereum);
-  const [userName, setUserName] = useState(''); // Add state for user name
+  const [userName, setUserName] = useState(""); // Add state for user name
 
   useEffect(() => {
     if (window.ethereum) {
@@ -34,18 +38,18 @@ function CreateCard({ walletAddress }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
 
-    if (name === 'githubUsername') {
+    if (name === "githubUsername") {
       setInputGithubUsername(value);
     }
   };
 
   const addSocialMediaField = () => {
-    setSocialMedia(prev => [...prev, { name: "", link: "" }]);
+    setSocialMedia((prev) => [...prev, { name: "", link: "" }]);
   };
 
   const handleSocialMediaChange = (index, key, value) => {
@@ -59,11 +63,14 @@ function CreateCard({ walletAddress }) {
     if (inputGithubUsername) {
       const fetchUserProfile = async () => {
         try {
-          const response = await axios.get(`https://api.github.com/users/${inputGithubUsername}`, {
-            headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
-            },
-          });
+          const response = await axios.get(
+            `https://api.github.com/users/${inputGithubUsername}`,
+            {
+              headers: {
+                Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
+              },
+            }
+          );
           setProfilePic(response.data.avatar_url);
           setGithubUsername(inputGithubUsername); // Update githubUsername state with the input value
         } catch (error) {
@@ -73,7 +80,7 @@ function CreateCard({ walletAddress }) {
       };
       fetchUserProfile();
     } else {
-      setProfilePic(''); // Reset profilePic when input is empty
+      setProfilePic(""); // Reset profilePic when input is empty
     }
   }, [inputGithubUsername]);
 
@@ -86,17 +93,19 @@ function CreateCard({ walletAddress }) {
     setUserName(data.name); // Update the global userName state
 
     // Update formData.githubUsername with the githubUsername state
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      githubUsername
+      githubUsername,
     }));
 
-    const element = document.getElementById('card-preview');
+    const element = document.getElementById("card-preview");
     const canvas = await html2canvas(element);
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/png")
+    );
     const file = new File([blob], "card-image.png", { type: "image/png" });
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     const pinataEndpoint = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
     const headers = {
@@ -108,8 +117,8 @@ function CreateCard({ walletAddress }) {
       const imageResponse = await axios.post(pinataEndpoint, formData, {
         headers: {
           ...headers,
-          'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
-        }
+          "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+        },
       });
 
       const imageIpfsUrl = `https://gateway.pinata.cloud/ipfs/${imageResponse.data.IpfsHash}`;
@@ -121,40 +130,53 @@ function CreateCard({ walletAddress }) {
         attributes: [
           { trait_type: "Role", value: data.role },
           { trait_type: "Interests", value: data.interests },
-        ]
+        ],
       };
 
-      const metadataBlob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
-      const metadataFile = new File([metadataBlob], "metadata.json", { type: "application/json" });
-      const metadataFormData = new FormData();
-      metadataFormData.append('file', metadataFile);
-
-      const metadataResponse = await axios.post(pinataEndpoint, metadataFormData, {
-        headers: {
-          ...headers,
-          'Content-Type': `multipart/form-data; boundary=${metadataFormData._boundary}`,
-        }
+      const metadataBlob = new Blob([JSON.stringify(metadata)], {
+        type: "application/json",
       });
-      console.log('Metadata added succesfully:', metadataResponse.data);
+      const metadataFile = new File([metadataBlob], "metadata.json", {
+        type: "application/json",
+      });
+      const metadataFormData = new FormData();
+      metadataFormData.append("file", metadataFile);
+
+      const metadataResponse = await axios.post(
+        pinataEndpoint,
+        metadataFormData,
+        {
+          headers: {
+            ...headers,
+            "Content-Type": `multipart/form-data; boundary=${metadataFormData._boundary}`,
+          },
+        }
+      );
+      console.log("Metadata added succesfully:", metadataResponse.data);
       const metadataIpfsUrl = `https://gateway.pinata.cloud/ipfs/${metadataResponse.data.IpfsHash}`;
       setIpfsUrl(metadataIpfsUrl);
       setIsMinting(true); // Show the mint button
       // Assuming mintNFT function exists and works correctly
       // await mintNFT(metadataIpfsUrl);
     } catch (error) {
-      console.error('Error adding card or metadata:', error);
+      console.error("Error adding card or metadata:", error);
     }
   };
 
   const mintNFT = async (metadataIpfsUrl) => {
-    const contract = new web3.eth.Contract(YourSmartContractABI, import.meta.env.VITE_SMART_CONTRACT_ADDRESS);
+    const contract = new web3.eth.Contract(
+      YourSmartContractABI,
+      import.meta.env.VITE_SMART_CONTRACT_ADDRESS
+    );
     const accounts = await web3.eth.getAccounts();
     try {
-      await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0] });
-      console.log('NFT minted successfully!');
-      navigate('/mint-success'); // Redirect to MintSuccess page
+      await contract.methods
+        .mintCard(accounts[0], metadataIpfsUrl)
+        .send({ from: accounts[0] });
+      console.log("NFT minted successfully!");
+      navigate("/mint-success"); // Redirect to MintSuccess page
     } catch (error) {
-      console.error('Error minting NFT:', error);
+      console.error("Error minting NFT:", error);
     }
   };
 
@@ -165,61 +187,162 @@ function CreateCard({ walletAddress }) {
   // Render the form if the wallet is connected
   return (
     <>
-      <div className="bg-orange-100 font-serif min-h-screen flex justify-center">
+      <div className="bg-orange-100 font-serif min-h-screen flex justify-center items-center">
         <div className="w-1/2">
-          <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto mt-8 p-8 bg-white bg-opacity-50 shadow-md shadow-black rounded-lg border border-gray-300">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="max-w-md mx-auto mt-8 p-8 bg-white bg-opacity-50 shadow-md shadow-black rounded-lg border border-gray-300"
+          >
             {/* Name input */}
             <div className="mb-4">
-              <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Name:</label>
-              <input {...register("name", { required: true })} id="name" name="name" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50" placeholder="Your Name..." value={formData.name} onChange={handleInputChange}/>
-              {errors.name && <span className="text-red-500">Name is required</span>}
+              <label
+                htmlFor="name"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Name:
+              </label>
+              <input
+                {...register("name", { required: true })}
+                id="name"
+                name="name"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50"
+                placeholder="Your Name..."
+                value={formData.name}
+                onChange={handleInputChange}
+              />
+              {errors.name && (
+                <span className="text-red-500">Name is required</span>
+              )}
             </div>
 
             {/* Other input fields... */}
             {/* Role input */}
             <div className="mb-4">
-              <label htmlFor="role" className="block text-gray-700 text-sm font-bold mb-2">Role:</label>
-              <input {...register("role", { required: true })} id="role" name="role" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50" placeholder="Your Role..." value={formData.role} onChange={handleInputChange} />
-              {errors.role && <span className="text-red-500">Role is required</span>}
+              <label
+                htmlFor="role"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Role:
+              </label>
+              <input
+                {...register("role", { required: true })}
+                id="role"
+                name="role"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50"
+                placeholder="Your Role..."
+                value={formData.role}
+                onChange={handleInputChange}
+              />
+              {errors.role && (
+                <span className="text-red-500">Role is required</span>
+              )}
             </div>
 
             {/* Interests input */}
             <div className="mb-4">
-              <label htmlFor="interests" className="block text-gray-700 text-sm font-bold mb-2">Interests:</label>
-              <input {...register("interests", { required: true })} id="interests" name="interests" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50" placeholder="Your Interests..." value={formData.interests} onChange={handleInputChange} />
-              {errors.interests && <span className="text-red-500">Interests are required</span>}
+              <label
+                htmlFor="interests"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Interests:
+              </label>
+              <input
+                {...register("interests", { required: true })}
+                id="interests"
+                name="interests"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50"
+                placeholder="Your Interests..."
+                value={formData.interests}
+                onChange={handleInputChange}
+              />
+              {errors.interests && (
+                <span className="text-red-500">Interests are required</span>
+              )}
             </div>
 
             {/* GitHub Username input */}
             <div className="mb-4">
-              <label htmlFor="githubUsername" className="block text-gray-700 text-sm font-bold mb-2">GitHub Username:</label>
-              <input {...register("githubUsername", { required: true })} id="githubUsername" name="githubUsername" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50" placeholder="GitHub Username..." value={formData.githubUsername} onChange={handleInputChange} />
-              {errors.githubUsername && <span className="text-red-500">GitHub username is required</span>}
+              <label
+                htmlFor="githubUsername"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                GitHub Username:
+              </label>
+              <input
+                {...register("githubUsername", { required: true })}
+                id="githubUsername"
+                name="githubUsername"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker bg-white bg-opacity-50"
+                placeholder="GitHub Username..."
+                value={formData.githubUsername}
+                onChange={handleInputChange}
+              />
+              {errors.githubUsername && (
+                <span className="text-red-500">
+                  GitHub username is required
+                </span>
+              )}
             </div>
 
             {/* Social Media Fields */}
             {socialMedia.map((social, index) => (
               <div key={index} className="mb-4 flex space-x-4">
-                <input type="text" placeholder="Social Media Name" className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md" value={social.name} onChange={(e) => handleSocialMediaChange(index, "name", e.target.value)} />
-                <input type="text" placeholder="Social Media Link" className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md" value={social.link} onChange={(e) => handleSocialMediaChange(index, "link", e.target.value)} />
+                <input
+                  type="text"
+                  placeholder="Social Media Name"
+                  className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
+                  value={social.name}
+                  onChange={(e) =>
+                    handleSocialMediaChange(index, "name", e.target.value)
+                  }
+                />
+                <input
+                  type="text"
+                  placeholder="Social Media Link"
+                  className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
+                  value={social.link}
+                  onChange={(e) =>
+                    handleSocialMediaChange(index, "link", e.target.value)
+                  }
+                />
                 {socialMedia.length > 1 && (
-                  <button type="button" onClick={() => removeSocialMediaField(index)} className="bg-red-500 text-white font-bold py-1 px-2 rounded">X</button>
+                  <button
+                    type="button"
+                    onClick={() => removeSocialMediaField(index)}
+                    className="bg-red-500 text-white font-bold py-1 px-2 rounded"
+                  >
+                    X
+                  </button>
                 )}
               </div>
             ))}
-            <button type="button" onClick={addSocialMediaField} className="mb-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add Social Media</button>
+            <button
+              type="button"
+              onClick={addSocialMediaField}
+              className="mb-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Add Social Media
+            </button>
 
             {/* Submit button */}
-            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Add Your E-Card</button>
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+            >
+              Add Your E-Card
+            </button>
           </form>
         </div>
 
         {/* Card Preview */}
-        <div id="card-preview" className="w-1/2">
+        <div
+          id="card-preview"
+          className="w-1/2 max-w-md mx-auto p-8 bg-transparent shadow-md shadow-black rounded-lg border border-gray-300"
+        >
           {formData && (
-            <div className="bg-blue-900 mt-28 max-w-sm mx-auto mb-8 h-48 w-112 rounded-lg overflow-hidden font-serif text-white flex items-center shadow-2xl">
+            <div className="bg-blue-900 max-w-sm mx-auto h-48 w-112 rounded-lg overflow-hidden font-serif text-white flex items-center shadow-2xl">
               <img
-                className="mt-3 w-28 h-28 rounded-full mr-4 ml-4" 
+                className="mt-3 w-28 h-28 rounded-full mr-4 ml-4"
                 src={profilePic}
                 alt="GitHub Avatar"
               />
@@ -234,7 +357,15 @@ function CreateCard({ walletAddress }) {
                 <div className="flex flex-wrap gap-2 mt-2">
                   {socialMedia.map((social, index) =>
                     social.name && social.link ? (
-                      <a key={index} href={social.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-800 mx-2">{social.name}</a>
+                      <a
+                        key={index}
+                        href={social.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-800 mx-2"
+                      >
+                        {social.name}
+                      </a>
                     ) : null
                   )}
                 </div>
@@ -246,7 +377,10 @@ function CreateCard({ walletAddress }) {
         {/* Conditionally render the Mint button */}
         {isMinting && (
           <div className="flex justify-center mt-4">
-            <button onClick={() => mintNFT(ipfsUrl)} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            <button
+              onClick={() => mintNFT(ipfsUrl)}
+              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            >
               Mint Your E-Dev Card
             </button>
           </div>
