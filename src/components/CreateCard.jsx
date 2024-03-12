@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import html2canvas from 'html2canvas';
@@ -206,5 +207,9 @@ function CreateCard({ walletAddress }) {
     </>
   );
 }
+
+CreateCard.propTypes = {
+  walletAddress: PropTypes.string,
+};
 
 export default CreateCard;
