@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { ethers } from 'ethers';
+import { useLocation, Link } from 'react-router-dom';
+
 
 const NavBar = ({ walletAddress, setWalletAddress }) => {
   const [networkName, setNetworkName] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const location = useLocation();
+
+  const isCreateOrMintSuccessRoute = location.pathname === '/create' || location.pathname === '/mint-success';
+  const isRootRoute = location.pathname === '/';
+
 
   const connectWalletHandler = async () => {
     if (window.ethereum) {
@@ -57,13 +64,26 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
   };
 
   return (
-    <nav className="bg-indigo-950 pt-3 pb-3">
+    <nav className="bg-orange-100 pt-3 pb-3">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between">
-          <div className="flex text-3xl mt-1 space-x-4 text-white font-bold">
-            Developer's E-Card
+          <div className="flex text-3xl mt-1 space-x-4 text-black font-serif text-3x1">
+            Velocity
           </div>
-          <div className="flex items-center space-x-1 relative">
+          <div className="flex items-center space-x-4 relative">
+            {isRootRoute && (
+            <>
+              <Link to="/about" className=" font-serif text-black hover:text-orange-900 text-lg">
+                About
+              </Link>
+              <Link to="/developers" className=" font-serif text-black hover:text-orange-900 text-lg">
+                Developers
+              </Link>
+              <Link to="/stories" className="font-serif text-black hover:text-orange-900 text-lg">
+                Stories
+              </Link>
+            </>
+          )}
             {walletAddress ? (
               <>
                 <button
@@ -95,14 +115,14 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
                   </div>
                 )}
               </>
-            ) : (
+            ) : isCreateOrMintSuccessRoute ?  (
               <button
                 className="bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium"
                 onClick={connectWalletHandler}
               >
                 Connect Wallet
               </button>
-            )}
+            ) :null}
           </div>
         </div>
       </div>
