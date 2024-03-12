@@ -6,7 +6,6 @@ import Web3 from 'web3';
 import YourSmartContractABI from './ABI.json';
 import { useNavigate } from 'react-router-dom';
 
-
 function CreateCard({ walletAddress }) {
   const navigate = useNavigate()
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -22,6 +21,7 @@ function CreateCard({ walletAddress }) {
   const [ipfsUrl, setIpfsUrl] = useState("");
   const [isMinting, setIsMinting] = useState(false); // State to control mint button visibility
   const web3 = new Web3(window.ethereum);
+  const [userName, setUserName] = useState(''); // Add state for user name
 
   useEffect(() => {
     if (window.ethereum) {
@@ -137,7 +137,7 @@ function CreateCard({ walletAddress }) {
             {/* Name input */}
             <div className="mb-4">
               <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Name:</label>
-              <input {...register("name", { required: true })} id="name" name="name" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker" placeholder="Your Name..." value={formData.name} onChange={handleInputChange} />
+              <input {...register("name", { required: true })} id="name" name="name" className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker" placeholder="Your Name..." value={formData.name} onChange={handleInputChange}/>
               {errors.name && <span className="text-red-500">Name is required</span>}
             </div>
 
