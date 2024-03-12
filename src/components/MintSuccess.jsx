@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import Profile from './Profile';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { db } from '../firebaseConfig';
 import { collection, addDoc, doc, updateDoc, getDoc, increment, arrayUnion, arrayRemove, orderBy, query, onSnapshot } from 'firebase/firestore';
@@ -9,6 +11,12 @@ function MintSuccess({ userName, walletAddress }) {
   const [newComment, setNewComment] = useState('');
   const [likedTweets, setLikedTweets] = useState({});
   const [tweets, setTweets] = useState([]);
+
+  const navigate = useNavigate(); // Initialize useHistory
+
+  const goToProfile = () => {
+    navigate('/profile'); // Navigate to Profile component
+  };
 
   useEffect(() => {
     // Launch confetti animation
@@ -47,22 +55,24 @@ function MintSuccess({ userName, walletAddress }) {
 
   const postTweet = async () => {
     if (newTweet.trim() === '') return;
-
-    // Include user's name and wallet address in the tweet content
-    const tweetContent = `Name: ${userName}, Wallet: ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}, Tweet: ${newTweet}`;
-
+  
     try {
       await addDoc(collection(db, "tweets"), {
-        content: tweetContent,
-        likes: 0, // Initialize likes to 0
-        timestamp: new Date()
+        content: newTweet,
+        likes: 0,
+        likedBy: [], // Initialize likedBy array
+        comments: [], // Initialize comments array
+        timestamp: new Date(),
+        walletAddress: walletAddress // Include the user's wallet address
       });
       setNewTweet(''); // Reset the tweet input after posting
       console.log("Tweet added successfully.")
     } catch (error) {
       console.error("Error adding tweet: ", error);
     }
+    setNewTweet('')
   };
+  
 
   const handleLike = async (tweetId, walletAddress, isLiked) => {
     // Get a reference to the tweet document
@@ -113,19 +123,16 @@ function MintSuccess({ userName, walletAddress }) {
 
   const handleCommentSubmit = async (tweetId, comment) => {
     if (!comment || comment.trim() === '') return;
-
+  
     const tweetRef = doc(db, 'tweets', tweetId);
     try {
       await updateDoc(tweetRef, {
         comments: arrayUnion({
           text: comment,
           createdAt: new Date(),
+          walletAddress: walletAddress // Include the commenter's wallet address
         }),
       });
-
-      setNewComment(prevComments => ({ ...prevComments, [tweetId]: '' }));
-      const updatedTweet = await getDoc(tweetRef);
-      setTweets(prevTweets => prevTweets.map(tweet => tweet.id === tweetId ? { ...updatedTweet.data(), id: updatedTweet.id } : tweet));
     } catch (error) {
       console.error("Error adding comment: ", error);
     }
@@ -133,6 +140,7 @@ function MintSuccess({ userName, walletAddress }) {
 
   return (
     <>
+    <button onClick={goToProfile}>Go to Profile</button>
       {showPrompt && (
         <div className="fixed top-0 left-0 right-0 bg-blue-500 text-white py-4 px-6 text-center z-50">
           Congratulations! Your card has been minted successfully.

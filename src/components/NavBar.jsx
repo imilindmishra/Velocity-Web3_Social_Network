@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ethers } from 'ethers';
 import { useLocation, Link } from 'react-router-dom';
 
@@ -56,7 +56,6 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
     }
   };
   
-
   const disconnectWalletHandler = () => {
     setWalletAddress('');
     setNetworkName('');
