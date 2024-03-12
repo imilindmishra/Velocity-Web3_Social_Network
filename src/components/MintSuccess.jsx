@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import confetti from 'canvas-confetti';
 import { db } from '../firebaseConfig';
 import { collection, addDoc, doc, updateDoc, increment, arrayUnion, orderBy, query, onSnapshot } from 'firebase/firestore';
@@ -153,10 +152,4 @@ function MintSuccess({ userName, walletAddress }) {
     </>
   );
 }
-
-MintSuccess.propTypes = {
-  userName: PropTypes.string.isRequired,
-  walletAddress: PropTypes.string.isRequired,
-};
-
 export default MintSuccess;
