@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, doc, updateDoc, getDoc, increment, arrayUnion, orderBy, query, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, getDoc, increment, arrayUnion, arrayRemove, orderBy, query, onSnapshot } from 'firebase/firestore';
 
 function MintSuccess({ userName, walletAddress }) {
   const [showPrompt, setShowPrompt] = useState(true);
   const [newTweet, setNewTweet] = useState('');
-  const [newComment, setNewComment] = useState(''); 
-  const [likes, setLikes] = useState({});
-  const [tweets, setTweets] = useState([]);
+  const [newComment, setNewComment] = useState('');
   const [likedTweets, setLikedTweets] = useState({});
+  const [tweets, setTweets] = useState([]);
 
   useEffect(() => {
     // Launch confetti animation
@@ -20,7 +19,7 @@ function MintSuccess({ userName, walletAddress }) {
     });
     // Hide the minting success message after a delay
     setTimeout(() => setShowPrompt(false), 5000);
-
+  
     // Listen for new tweets and update state
     const q = query(collection(db, "tweets"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -29,11 +28,22 @@ function MintSuccess({ userName, walletAddress }) {
         ...doc.data()
       }));
       setTweets(tweetsArray);
+  
+      // Reset likedTweets state based on the new tweets array
+      const newLikedTweets = {};
+      tweetsArray.forEach(tweet => {
+        if (tweet.likedBy && tweet.likedBy.includes(walletAddress)) {
+          newLikedTweets[tweet.id] = true;
+        } else {
+          newLikedTweets[tweet.id] = false;
+        }
+      });
+      setLikedTweets(newLikedTweets);
     });
-
+  
     // Cleanup listener on component unmount
     return () => unsubscribe();
-  }, []);
+  }, [walletAddress]);
 
   const postTweet = async () => {
     if (newTweet.trim() === '') return;
@@ -44,6 +54,7 @@ function MintSuccess({ userName, walletAddress }) {
     try {
       await addDoc(collection(db, "tweets"), {
         content: tweetContent,
+        likes: 0, // Initialize likes to 0
         timestamp: new Date()
       });
       setNewTweet(''); // Reset the tweet input after posting
@@ -53,51 +64,56 @@ function MintSuccess({ userName, walletAddress }) {
     }
   };
 
-  const handleLike = async (tweetId) => {
+  const handleLike = async (tweetId, walletAddress, isLiked) => {
     // Get a reference to the tweet document
     const tweetRef = doc(db, 'tweets', tweetId);
   
-    if (likedTweets[tweetId]) {
-      // If the tweet has already been liked, unlike it
-      setLikedTweets((prevLikedTweets) => {
-        const newLikedTweets = { ...prevLikedTweets };
-        delete newLikedTweets[tweetId];
-        return newLikedTweets;
-      });
+    try {
+      if (isLiked) {
+        // If the user has already liked the tweet, unlike it
+        // Remove the user's wallet address from the likedBy array
+        await updateDoc(tweetRef, {
+          likes: increment(-1),
+          likedBy: arrayRemove(walletAddress),
+        });
   
-      // Decrement the likes field of the tweet document
-      await updateDoc(tweetRef, {
-        likes: increment(-1),
-      });
+        // Update the local state
+        setLikedTweets((prevLikedTweets) => ({
+          ...prevLikedTweets,
+          [tweetId]: false,
+        }));
+      } else {
+        // If the user has not liked the tweet, like it
+        // Add the user's wallet address to the likedBy array
+        await updateDoc(tweetRef, {
+          likes: increment(1),
+          likedBy: arrayUnion(walletAddress),
+        });
   
-      // Update the local state
-      setLikes((prevLikes) => ({
-        ...prevLikes,
-        [tweetId]: prevLikes[tweetId] - 1,
-      }));
-    } else {
-      // If the tweet has not been liked, like it
-      setLikedTweets((prevLikedTweets) => ({
-        ...prevLikedTweets,
-        [tweetId]: true,
-      }));
+        // Update the local state
+        setLikedTweets((prevLikedTweets) => ({
+          ...prevLikedTweets,
+          [tweetId]: true,
+        }));
+      }
   
-      // Increment the likes field of the tweet document
-      await updateDoc(tweetRef, {
-        likes: increment(1),
-      });
-  
-      // Update the local state
-      setLikes((prevLikes) => ({
-        ...prevLikes,
-        [tweetId]: (prevLikes[tweetId] || 0) + 1,
-      }));
+      // Update the tweets state with the new like count
+      const updatedTweetSnap = await getDoc(tweetRef);
+      setTweets((prevTweets) =>
+        prevTweets.map((tweet) =>
+          tweet.id === tweetId
+            ? { ...updatedTweetSnap.data(), id: updatedTweetSnap.id }
+            : tweet
+        )
+      );
+    } catch (error) {
+      console.error("Error updating like: ", error);
     }
   };
 
   const handleCommentSubmit = async (tweetId, comment) => {
     if (!comment || comment.trim() === '') return;
-  
+
     const tweetRef = doc(db, 'tweets', tweetId);
     try {
       await updateDoc(tweetRef, {
@@ -106,10 +122,9 @@ function MintSuccess({ userName, walletAddress }) {
           createdAt: new Date(),
         }),
       });
-  
+
       setNewComment(prevComments => ({ ...prevComments, [tweetId]: '' }));
       const updatedTweet = await getDoc(tweetRef);
-    // Update the tweets state
       setTweets(prevTweets => prevTweets.map(tweet => tweet.id === tweetId ? { ...updatedTweet.data(), id: updatedTweet.id } : tweet));
     } catch (error) {
       console.error("Error adding comment: ", error);
@@ -138,25 +153,28 @@ function MintSuccess({ userName, walletAddress }) {
           {tweets.map((tweet) => (
             <div key={tweet.id} className="bg-gray-100 p-4 rounded-lg mb-4">
               {tweet.content}
-              {userName}
-              <button onClick={() => handleLike(tweet.id)} className="btn btn-primary">Like</button>
-              <p>{likes[tweet.id] || 0} Likes</p>
+              <p>{tweet.likes} Likes</p> {/* Display likes count */}
+              <button
+                onClick={() => handleLike(tweet.id, walletAddress, likedTweets[tweet.id])}
+                className="btn btn-primary"
+              >
+                {likedTweets[tweet.id] ? 'Unlike' : 'Like'}
+              </button>
               <textarea
-              className="textarea textarea-bordered w-full mb-2"
-              placeholder="Write a comment..."
-              value={newComment[tweet.id] || ''}
-              onChange={(e) => setNewComment(prevComments => ({ ...prevComments, [tweet.id]: e.target.value }))}
-             ></textarea>
-             {tweet.comments && tweet.comments.map((comment, index) => (
-              <div key={index}>
-                <p>{comment.text}</p>
-              </div>
-            ))}
-             <button onClick={() => handleCommentSubmit(tweet.id, newComment[tweet.id])} className="btn btn-primary">Post Comment</button>
+                className="textarea textarea-bordered w-full mb-2"
+                placeholder="Write a comment..."
+                value={newComment[tweet.id] || ''}
+                onChange={(e) => setNewComment(prevComments => ({ ...prevComments, [tweet.id]: e.target.value }))}
+              ></textarea>
+              {tweet.comments && tweet.comments.map((comment, index) => (
+                <div key={index}>
+                  <p>{comment.text}</p>
+                </div>
+              ))}
+              <button onClick={() => handleCommentSubmit(tweet.id, newComment[tweet.id])} className="btn btn-primary">Post Comment</button>
             </div>
           ))}
         </div>
-        
       </div>
     </>
   );
