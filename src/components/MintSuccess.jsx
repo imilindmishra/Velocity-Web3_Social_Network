@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, doc, updateDoc, increment, arrayUnion, orderBy, query, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, getDoc, increment, arrayUnion, orderBy, query, onSnapshot } from 'firebase/firestore';
 
 function MintSuccess({ userName, walletAddress }) {
   const [showPrompt, setShowPrompt] = useState(true);
@@ -108,6 +108,9 @@ function MintSuccess({ userName, walletAddress }) {
       });
   
       setNewComment(prevComments => ({ ...prevComments, [tweetId]: '' }));
+      const updatedTweet = await getDoc(tweetRef);
+    // Update the tweets state
+      setTweets(prevTweets => prevTweets.map(tweet => tweet.id === tweetId ? { ...updatedTweet.data(), id: updatedTweet.id } : tweet));
     } catch (error) {
       console.error("Error adding comment: ", error);
     }
@@ -144,10 +147,16 @@ function MintSuccess({ userName, walletAddress }) {
               value={newComment[tweet.id] || ''}
               onChange={(e) => setNewComment(prevComments => ({ ...prevComments, [tweet.id]: e.target.value }))}
              ></textarea>
+             {tweet.comments && tweet.comments.map((comment, index) => (
+              <div key={index}>
+                <p>{comment.text}</p>
+              </div>
+            ))}
              <button onClick={() => handleCommentSubmit(tweet.id, newComment[tweet.id])} className="btn btn-primary">Post Comment</button>
             </div>
           ))}
         </div>
+        
       </div>
     </>
   );
