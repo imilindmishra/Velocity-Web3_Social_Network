@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, doc, updateDoc, getDoc, increment, arrayUnion, orderBy, query, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, getDoc, increment, arrayUnion, arrayRemove, orderBy, query, onSnapshot } from 'firebase/firestore';
 
 function MintSuccess({ userName, walletAddress }) {
   const [showPrompt, setShowPrompt] = useState(true);
@@ -19,7 +19,7 @@ function MintSuccess({ userName, walletAddress }) {
     });
     // Hide the minting success message after a delay
     setTimeout(() => setShowPrompt(false), 5000);
-
+  
     // Listen for new tweets and update state
     const q = query(collection(db, "tweets"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -28,11 +28,22 @@ function MintSuccess({ userName, walletAddress }) {
         ...doc.data()
       }));
       setTweets(tweetsArray);
+  
+      // Reset likedTweets state based on the new tweets array
+      const newLikedTweets = {};
+      tweetsArray.forEach(tweet => {
+        if (tweet.likedBy && tweet.likedBy.includes(walletAddress)) {
+          newLikedTweets[tweet.id] = true;
+        } else {
+          newLikedTweets[tweet.id] = false;
+        }
+      });
+      setLikedTweets(newLikedTweets);
     });
-
+  
     // Cleanup listener on component unmount
     return () => unsubscribe();
-  }, []);
+  }, [walletAddress]);
 
   const postTweet = async () => {
     if (newTweet.trim() === '') return;
@@ -53,31 +64,50 @@ function MintSuccess({ userName, walletAddress }) {
     }
   };
 
-  const handleLike = async (tweetId, walletAddress) => {
+  const handleLike = async (tweetId, walletAddress, isLiked) => {
     // Get a reference to the tweet document
     const tweetRef = doc(db, 'tweets', tweetId);
-
-    // Get the current tweet data
-    const tweetSnap = await getDoc(tweetRef);
-    const tweetData = tweetSnap.data();
-
-    // Check if the user (wallet address) has already liked the tweet
-    if (tweetData.likedBy && tweetData.likedBy.includes(walletAddress)) {
-      // If the user has already liked the tweet, do nothing
-      return;
-    } else {
-      // If the user has not liked the tweet, like it
-      // Add the user's wallet address to the likedBy array
-      await updateDoc(tweetRef, {
-        likes: increment(1),
-        likedBy: arrayUnion(walletAddress),
-      });
-
-      // Update the local state
-      setLikedTweets((prevLikedTweets) => ({
-        ...prevLikedTweets,
-        [tweetId]: true,
-      }));
+  
+    try {
+      if (isLiked) {
+        // If the user has already liked the tweet, unlike it
+        // Remove the user's wallet address from the likedBy array
+        await updateDoc(tweetRef, {
+          likes: increment(-1),
+          likedBy: arrayRemove(walletAddress),
+        });
+  
+        // Update the local state
+        setLikedTweets((prevLikedTweets) => ({
+          ...prevLikedTweets,
+          [tweetId]: false,
+        }));
+      } else {
+        // If the user has not liked the tweet, like it
+        // Add the user's wallet address to the likedBy array
+        await updateDoc(tweetRef, {
+          likes: increment(1),
+          likedBy: arrayUnion(walletAddress),
+        });
+  
+        // Update the local state
+        setLikedTweets((prevLikedTweets) => ({
+          ...prevLikedTweets,
+          [tweetId]: true,
+        }));
+      }
+  
+      // Update the tweets state with the new like count
+      const updatedTweetSnap = await getDoc(tweetRef);
+      setTweets((prevTweets) =>
+        prevTweets.map((tweet) =>
+          tweet.id === tweetId
+            ? { ...updatedTweetSnap.data(), id: updatedTweetSnap.id }
+            : tweet
+        )
+      );
+    } catch (error) {
+      console.error("Error updating like: ", error);
     }
   };
 
@@ -126,11 +156,10 @@ function MintSuccess({ userName, walletAddress }) {
               {tweet.content}
               <p>{tweet.likes} Likes</p> {/* Display likes count */}
               <button
-                onClick={() => handleLike(tweet.id, walletAddress)}
+                onClick={() => handleLike(tweet.id, walletAddress, likedTweets[tweet.id])}
                 className="btn btn-primary"
-                disabled={likedTweets[tweet.id]}
               >
-                {likedTweets[tweet.id] ? 'Liked' : 'Like'}
+                {likedTweets[tweet.id] ? 'Unlike' : 'Like'}
               </button>
               <textarea
                 className="textarea textarea-bordered w-full mb-2"
