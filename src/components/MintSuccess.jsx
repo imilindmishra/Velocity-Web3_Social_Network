@@ -125,7 +125,6 @@ function MintSuccess({ userName, walletAddress }) {
 
       setNewComment(prevComments => ({ ...prevComments, [tweetId]: '' }));
       const updatedTweet = await getDoc(tweetRef);
-      // Update the tweets state
       setTweets(prevTweets => prevTweets.map(tweet => tweet.id === tweetId ? { ...updatedTweet.data(), id: updatedTweet.id } : tweet));
     } catch (error) {
       console.error("Error adding comment: ", error);
