@@ -163,24 +163,30 @@ function CreateCard({ walletAddress }) {
     }
   };
 
-    const mintNFT = async (metadataIpfsUrl) => {
-    const contract = new web3.eth.Contract(YourSmartContractABI, import.meta.env.VITE_SMART_CONTRACT_ADDRESS);
+  const mintNFT = async (metadataIpfsUrl) => {
+    const contract = new web3.eth.Contract(
+      YourSmartContractABI,
+      import.meta.env.VITE_SMART_CONTRACT_ADDRESS
+    );
     const accounts = await web3.eth.getAccounts();
     try {
-      const mint = await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0],gas: 3000000, 
-    gasPrice: 210 });
-      console.log('NFT minted successfully!');
-      navigate('/mint-success'); // Redirect to MintSuccess page
+      const mint = await contract.methods
+        .mintCard(accounts[0], metadataIpfsUrl)
+        .send({ from: accounts[0], gas: 3000000, gasPrice: 210 });
+      console.log("NFT minted successfully!");
+      navigate("/mint-success"); // Redirect to MintSuccess page
     } catch (error) {
-      console.error('Error minting NFT:', error);
+      console.error("Error minting NFT:", error);
     }
   };
 
   if (!walletAddress) {
-    return <p>Please connect your wallet to create a card.</p>;
-  }
-
-  // Render the form if the wallet is connected
+    return (
+      <div className="bg-orange-100 font-serif min-h-screen flex justify-center items-center">
+        <p>Please connect your wallet to create a card.</p>
+      </div>
+    );
+  } //Render the form if the wallet is connected
   return (
     <>
       <div className="bg-orange-100 font-serif min-h-screen flex justify-center items-center">
@@ -189,6 +195,11 @@ function CreateCard({ walletAddress }) {
             onSubmit={handleSubmit(onSubmit)}
             className="max-w-md mx-auto mt-8 p-8 bg-white bg-opacity-50 shadow-md shadow-black rounded-lg border border-gray-300"
           >
+            {!walletAddress && (
+              <div className="text-red-500 mb-4">
+                Please connect your wallet to create a card.
+              </div>
+            )}
             {/* Name input */}
             <div className="mb-4">
               <label
@@ -280,10 +291,8 @@ function CreateCard({ walletAddress }) {
               )}
             </div>
 
-            
-
             {/* Submit button */}
-            
+
             <button
               type="submit"
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
@@ -294,27 +303,33 @@ function CreateCard({ walletAddress }) {
         </div>
 
         {/* Card Preview */}
-        <div className='w-1/2'>
-          <div id="card-preview" className="max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg ">
-            {profilePic && <img src={profilePic} alt="GitHub Avatar" className="w-24 h-24 rounded-full mx-auto"/>}
+        <div className="w-1/2">
+          <div
+            id="card-preview"
+            className="max-w-md mx-auto mt-8 p-8 bg-white shadow-md rounded-lg "
+          >
+            {profilePic && (
+              <img
+                src={profilePic}
+                alt="GitHub Avatar"
+                className="w-24 h-24 rounded-full mx-auto"
+              />
+            )}
             <h1 className="text-center text-xl font-bold">{formData.name}</h1>
             <p className="text-center">{formData.role}</p>
             <p className="text-center">{formData.interests}</p>
-
-            
           </div>
           {isMinting && (
-          <div className="flex justify-center mt-4">
-            <button onClick={() => mintNFT(ipfsUrl)} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-              Mint Your E-Dev Card
-            </button>
-          </div>
-        )}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => mintNFT(ipfsUrl)}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Mint Your E-Dev Card
+              </button>
+            </div>
+          )}
         </div>
-        
-
-        
-        
       </div>
     </>
   );

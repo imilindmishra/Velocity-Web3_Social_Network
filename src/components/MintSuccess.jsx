@@ -162,6 +162,7 @@ function MintSuccess({ userName, walletAddress }) {
           walletAddress: walletAddress
         }),
       });
+      setNewComment('')
     } catch (error) {
       console.error("Error adding comment: ", error);
     }
