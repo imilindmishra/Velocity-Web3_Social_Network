@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import axios from 'axios'; // Import axios at the top of your file
 import { db } from '../firebaseConfig';
-import axios from 'axios';
 import HeartIcon from './HeartIcon';
 import {
   collection,
