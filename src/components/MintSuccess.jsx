@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import axios from 'axios'; // Import axios at the top of your file
 import { db } from '../firebaseConfig';
@@ -15,18 +15,38 @@ import {
   arrayRemove,
   orderBy,
   query,
-  onSnapshot
+  onSnapshot, 
 } from 'firebase/firestore';
 
 function MintSuccess({ userName, walletAddress }) {
+  
   const [showPrompt, setShowPrompt] = useState(true);
   const [newTweet, setNewTweet] = useState('');
   const [newComment, setNewComment] = useState('');
   const [showCommentBox, setShowCommentBox] = useState({});
   const [likedTweets, setLikedTweets] = useState({});
   const [tweets, setTweets] = useState([]);
+  const [searchUsers, setSearchUsers] = useState('');
+  const [items, setItems] = useState([]);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { name } = location.state;
+  // const location = useLocation();
+  // const formData = location.state?.formData || {};
+
+  const storeFormData = async (formData) => {
+    try {
+      await addDoc(collection(db, "formData"), formData);
+      console.log("Form data stored successfully in Firestore");
+    } catch (error) {
+      console.error("Error storing form data in Firestore:", error);
+    }
+  };
+
+  const filteredItems = items.filter(item =>
+    item.toLowerCase().includes(searchUsers.toLowerCase())
+  );  
 
   const toggleCommentBox = (tweetId) => {
     setShowCommentBox((prev) => ({ ...prev, [tweetId]: !prev[tweetId] }));
@@ -67,11 +87,12 @@ function MintSuccess({ userName, walletAddress }) {
     if (newTweet.trim() === '') return;
     const tweetContent = {
       content: newTweet,
-      timestamp: new Date().toISOString(), // ISO string format for consistency
+      timestamp: new Date().toISOString(), // ISO string format for consistency 
     };
     const blob = new Blob([JSON.stringify(tweetContent)], { type: 'application/json' });
     const file = new File([blob], 'tweet-content.json', { type: 'application/json' });
     const formData = new FormData();
+    formData.append('githubUsername', userName); // Assuming githubUsername is a variable you have access to
     formData.append('file', file);
     const pinataEndpoint = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
     const headers = {
@@ -96,8 +117,10 @@ function MintSuccess({ userName, walletAddress }) {
         likedBy: [],
         comments: [],
         timestamp: new Date(),
-        walletAddress: walletAddress
+        walletAddress: walletAddress,
+        userName: name,
       });
+      await storeFormData({ newTweet, walletAddress });
       setNewTweet('');
       console.log("Tweet added successfully.")
     } catch (error) {
@@ -223,7 +246,10 @@ function MintSuccess({ userName, walletAddress }) {
                 {tweets.map((tweet) => (
                   <div key={tweet.id} className="mb-4">
                     <div className="py-4 shadow-lg pl-2">
-                      <div>{tweet.content}</div>
+                      <div>{name}: < br/>
+                      {tweet.walletAddress} 
+                       <br />
+                      {tweet.content}</div>
                       <p>{tweet.likes} Likes</p>
                       <div className="flex items-center">
                         <HeartIcon
@@ -264,6 +290,20 @@ function MintSuccess({ userName, walletAddress }) {
                   </div>
                 ))}
               </div>
+              {/* <div className="searchbar">
+                <input
+                  type="text"
+                  className="w-full h-12 rounded-md shadow-md px-4"
+                  placeholder="Search for users or tweets"
+                  value={searchUsers}
+                  onChange={(e) => setSearchUsers(e.target.value)}
+                />
+              </div>
+              <div>
+              {filteredItems.map((item, index) => (
+                <div key={index}>{item}</div>
+              ))}
+            </div> */}
               <div className="w-1/4 pt-[170px]">
                 <div className="bg-orange-50 p-4 rounded-lg shadow flex flex-col items-center justify-start">
                   <img src="public\images\star.png" alt="Star" className="" />

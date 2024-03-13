@@ -97,7 +97,8 @@ function CreateCard({ walletAddress }) {
       ...prevState,
       githubUsername,
     }));
-
+  
+    // Store the GitHub username in Firestore
     const element = document.getElementById("card-preview");
     const canvas = await html2canvas(element);
     const blob = await new Promise((resolve) =>
@@ -155,7 +156,8 @@ function CreateCard({ walletAddress }) {
       console.log("Metadata added succesfully:", metadataResponse.data);
       const metadataIpfsUrl = `https://gateway.pinata.cloud/ipfs/${metadataResponse.data.IpfsHash}`;
       setIpfsUrl(metadataIpfsUrl);
-      setIsMinting(true); // Show the mint button
+      setIsMinting(true);
+      await mintNFT(metadataIpfsUrl, data); // Show the mint button
       // Assuming mintNFT function exists and works correctly
       // await mintNFT(metadataIpfsUrl);
     } catch (error) {
@@ -174,7 +176,7 @@ function CreateCard({ walletAddress }) {
         .mintCard(accounts[0], metadataIpfsUrl)
         .send({ from: accounts[0], gas: 3000000, gasPrice: 210 });
       console.log("NFT minted successfully!");
-      navigate("/mint-success"); // Redirect to MintSuccess page
+      navigate('/mint-success', { state: { name: formData.name } }); // Redirect to MintSuccess page
     } catch (error) {
       console.error("Error minting NFT:", error);
     }
