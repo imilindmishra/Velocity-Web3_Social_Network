@@ -20,10 +20,15 @@ function MintSuccess({ userName, walletAddress }) {
   const [showPrompt, setShowPrompt] = useState(true);
   const [newTweet, setNewTweet] = useState('');
   const [newComment, setNewComment] = useState('');
+  const [showCommentBox, setShowCommentBox] = useState({});
   const [likedTweets, setLikedTweets] = useState({});
   const [tweets, setTweets] = useState([]);
 
   const navigate = useNavigate();
+
+  const toggleCommentBox = (tweetId) => {
+  setShowCommentBox((prev) => ({ ...prev, [tweetId]: !prev[tweetId] }));
+  };
 
   useEffect(() => {
     confetti({
@@ -109,6 +114,10 @@ function MintSuccess({ userName, walletAddress }) {
       console.error("Error updating like: ", error);
     }
   };
+  const goToProfile = () => {
+    navigate('/profile'); // Navigate to Profile component
+  };
+
 
   const handleCommentSubmit = async (tweetId, comment) => {
     if (!comment || comment.trim() === '') return;
@@ -171,6 +180,8 @@ function MintSuccess({ userName, walletAddress }) {
   </div>
   </>
       <div className="bg-orange-100 pt-3 pb-3">
+        <button onClick={goToProfile}>Go to Profile</button>
+
         <div className="max-w-6xl mx-auto px-4">
           {showPrompt && (
             <div className="fixed top-0 left-0 right-0 bg-blue-500 text-white py-4 px-6 text-center z-50">
@@ -188,39 +199,49 @@ function MintSuccess({ userName, walletAddress }) {
               <button onClick={postTweet} className="bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium">Tweet</button>
             </div>
             <div className="tweet-feed">
-              <h2 className="text-lg font-semibold mb-4">Latest Tweets</h2>
-              {tweets.map((tweet) => (
-                <div key={tweet.id} className="bg-gray-100 p-4 rounded-lg mb-4">
-                  <div>{tweet.content}</div>
-                  <p>{tweet.likes} Likes</p>
-                  <button
-                    onClick={() => handleLike(tweet.id)}
-                    className={`px-3 py-2 rounded-md text-sm font-medium ${likedTweets[tweet.id] ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'}`}
-                  >
-                    {likedTweets[tweet.id] ? 'Unlike' : 'Like'}
-                  </button>
-                  <div>
-                    <textarea
-                      className="textarea textarea-bordered w-full mb-2 px-4 py-2"
-                      placeholder="Write a comment..."
-                      value={newComment[tweet.id] || ''}
-                      onChange={(e) => setNewComment({ ...newComment, [tweet.id]: e.target.value })}
-                    ></textarea>
-                    <button
-                      onClick={() => handleCommentSubmit(tweet.id, newComment[tweet.id])}
-                      className="bg-green-500 text-white px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Post Comment
-                    </button>
-                  </div>
-                  {tweet.comments && tweet.comments.map((comment, index) => (
-                    <div key={index} className="mt-2">
-                      <p>{comment.text}</p>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+  <h2 className="text-lg font-semibold mb-4">Latest Tweets</h2>
+  {tweets.map((tweet) => (
+    <div key={tweet.id} className="bg-gray-100 p-4 w-3/4 rounded-lg mb-4 shadow">
+      <div>{tweet.content}</div>
+      <p>{tweet.likes} Likes</p>
+      <button
+        onClick={() => handleLike(tweet.id)}
+        className={`px-3 py-2 rounded-md text-sm font-medium ${likedTweets[tweet.id] ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'}`}
+      >
+        {likedTweets[tweet.id] ? 'Unlike' : 'Like'}
+      </button>
+      <button
+        onClick={() => toggleCommentBox(tweet.id)}
+        className="ml-2 bg-gray-200 text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+      >
+        Comment
+      </button>
+      {showCommentBox[tweet.id] && (
+        <div className="mt-4">
+          <textarea
+            className="textarea textarea-bordered w-full mb-2 px-4 py-2 shadow-lg"
+            placeholder="Write a comment..."
+            value={newComment[tweet.id] || ''}
+            onChange={(e) => setNewComment({ ...newComment, [tweet.id]: e.target.value })}
+          ></textarea>
+          <button
+            onClick={() => handleCommentSubmit(tweet.id, newComment[tweet.id])}
+            className="bg-green-500 text-white px-3 py-2 rounded-md text-sm font-medium flex items-center justify-center"
+          >
+            Post Comment
+            <span className="ml-2">➤</span> {/* Arrow icon, you can replace it with an SVG or an icon from a library like FontAwesome */}
+          </button>
+        </div>
+      )}
+      {tweet.comments && tweet.comments.map((comment, index) => (
+        <div key={index} className="mt-2">
+          <p>{comment.text}</p>
+        </div>
+      ))}
+    </div>
+  ))}
+</div>
+
           </div>
         </div>
       </div>

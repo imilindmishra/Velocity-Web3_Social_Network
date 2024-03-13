@@ -20,29 +20,29 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
         const signer = provider.getSigner();
         setWalletAddress(await signer.getAddress());
         
-        // Attempt to switch to the Polygon Mumbai test network
+        // Attempt to switch to the Shardeum Dev Network
         try {
-          await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(80001) }]);
-          setNetworkName('Polygon Mumbai Testnet');
+          await provider.send("wallet_switchEthereumChain", [{ chainId: ethers.utils.hexValue(8082) }]); // Chain ID for Shardeum
+          setNetworkName('Shardeum Dev Network');
         } catch (switchError) {
           // This error code indicates that the chain has not been added to MetaMask.
           if (switchError.code === 4902) {
             try {
-              // Add the Polygon Mumbai test network to MetaMask
+              // Add the Shardeum Dev Network to MetaMask
               await provider.send("wallet_addEthereumChain", [{
-                chainId: ethers.utils.hexValue(80001),
-                chainName: 'Polygon Mumbai Testnet',
-                rpcUrls: ['https://rpc-mumbai.maticvigil.com/'], // Use an appropriate RPC URL for Mumbai
-                blockExplorerUrls: ['https://mumbai.polygonscan.com/'],
+                chainId: ethers.utils.hexValue(8082), // Chain ID for Shardeum
+                chainName: 'Shardeum Dev Network',
+                rpcUrls: ['https://hackathon.shardeum.org/'], // New RPC URL for Shardeum
+                blockExplorerUrls: ['https://explorer-hackathon.shardeum.org/'], // Optional Block Explorer URL
                 nativeCurrency: {
-                  name: 'MATIC',
-                  symbol: 'MATIC',
+                  name: 'SHM', // Currency symbol for Shardeum
+                  symbol: 'SHM', // Currency symbol for Shardeum
                   decimals: 18,
                 },
               }]);
-              setNetworkName('Polygon Mumbai Testnet');
+              setNetworkName('Shardeum Dev Network');
             } catch (addError) {
-              console.error('Error adding Polygon Mumbai network:', addError);
+              console.error('Error adding Shardeum network:', addError);
             }
           } else {
             console.error('Error switching network:', switchError);
@@ -55,6 +55,7 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
       alert('Please install MetaMask!');
     }
   };
+
   
   const disconnectWalletHandler = () => {
     setWalletAddress('');

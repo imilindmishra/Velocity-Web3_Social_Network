@@ -163,20 +163,16 @@ function CreateCard({ walletAddress }) {
     }
   };
 
-  const mintNFT = async (metadataIpfsUrl) => {
-    const contract = new web3.eth.Contract(
-      YourSmartContractABI,
-      import.meta.env.VITE_SMART_CONTRACT_ADDRESS
-    );
+    const mintNFT = async (metadataIpfsUrl) => {
+    const contract = new web3.eth.Contract(YourSmartContractABI, import.meta.env.VITE_SMART_CONTRACT_ADDRESS);
     const accounts = await web3.eth.getAccounts();
     try {
-      await contract.methods
-        .mintCard(accounts[0], metadataIpfsUrl)
-        .send({ from: accounts[0] });
-      console.log("NFT minted successfully!");
-      navigate("/mint-success"); // Redirect to MintSuccess page
+      const mint = await contract.methods.mintCard(accounts[0], metadataIpfsUrl).send({ from: accounts[0],gas: 3000000, 
+    gasPrice: 210 });
+      console.log('NFT minted successfully!');
+      navigate('/mint-success'); // Redirect to MintSuccess page
     } catch (error) {
-      console.error("Error minting NFT:", error);
+      console.error('Error minting NFT:', error);
     }
   };
 
