@@ -6,6 +6,7 @@ import NavBar from './components/NavBar';
 import MintSuccess from './components/MintSuccess';
 import Profile from './components/Profile';
 
+
 function App() {
   const [walletAddress, setWalletAddress] = useState('');
   const [userName, setUserName] = useState(''); // Add state for user name

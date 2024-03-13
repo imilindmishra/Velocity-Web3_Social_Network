@@ -284,38 +284,6 @@ function CreateCard({ walletAddress }) {
               )}
             </div>
 
-            {/* Social Media Fields */}
-            {socialMedia.map((social, index) => (
-              <div key={index} className="mb-4 flex space-x-4">
-                <input
-                  type="text"
-                  placeholder="Social Media Name"
-                  className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
-                  value={social.name}
-                  onChange={(e) =>
-                    handleSocialMediaChange(index, "name", e.target.value)
-                  }
-                />
-                <input
-                  type="text"
-                  placeholder="Social Media Link"
-                  className="w-1/2 p-2 border bg-blue-50 border-gray-300 rounded-md"
-                  value={social.link}
-                  onChange={(e) =>
-                    handleSocialMediaChange(index, "link", e.target.value)
-                  }
-                />
-                {socialMedia.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeSocialMediaField(index)}
-                    className="bg-red-500 text-white font-bold py-1 px-2 rounded"
-                  >
-                    X
-                  </button>
-                )}
-              </div>
-            ))}
             
 
             {/* Submit button */}
