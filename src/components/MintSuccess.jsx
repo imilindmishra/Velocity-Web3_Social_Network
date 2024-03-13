@@ -129,7 +129,7 @@ function MintSuccess({ userName, walletAddress }) {
 
   return (
     <>
-    <>
+        <>
   <style>
     {`
       @keyframes typingEffect {
@@ -169,52 +169,7 @@ function MintSuccess({ userName, walletAddress }) {
       <span className="text-violet-400 typing-effect">built on Shardeum.</span>
     </h1>
   </div>
-
-  {showPrompt && (
-    <div className="fixed top-0 left-0 right-0 bg-blue-500 text-white py-4 px-6 text-center z-50">
-      Congratulations! Your card has been minted successfully.
-    </div>
-  )}
-  <div className="p-4 bg-amber-100">
-    <div className="tweet-box mb-4">
-      <textarea
-        className="textarea w-full mb-2 shadow-md h-18 rounded-md focus:outline-none focus:ring-0 focus:border-transparent focus:shadow-lg transition-all duration-300 px-4"
-        placeholder=" What's happening?"
-        value={newTweet}
-        onChange={(e) => setNewTweet(e.target.value)}
-      ></textarea>
-      <button onClick={postTweet} className="btn btn-primary">Tweet</button>
-    </div>
-    <div className="tweet-feed">
-      <h2 className="text-lg font-semibold mb-4">Latest Tweets</h2>
-      {tweets.map((tweet) => (
-        <div key={tweet.id} className="bg-gray-100 p-4 rounded-lg mb-4">
-          {tweet.content}
-          <p>{tweet.likes} Likes</p>
-          <button
-            onClick={() => handleLike(tweet.id, walletAddress, likedTweets[tweet.id])}
-            className="btn btn-primary"
-          >
-            {likedTweets[tweet.id] ? 'Unlike' : 'Like'}
-          </button>
-          <textarea
-            className="textarea textarea-bordered w-full mb-2 px-4"
-            placeholder="Write a comment..."
-            value={newComment[tweet.id] || ''}
-            onChange={(e) => setNewComment(prevComments => ({ ...prevComments, [tweet.id]: e.target.value }))}
-          ></textarea>
-          {tweet.comments && tweet.comments.map((comment, index) => (
-            <div key={index}>
-              <p>{comment.text}</p>
-            </div>
-          ))}
-          <button onClick={() => handleCommentSubmit(tweet.id, newComment[tweet.id])} className="btn btn-primary">Post Comment</button>
-        </div>
-      ))}
-    </div>
-  </div>
-</>
-
+  </>
       <div className="bg-orange-100 pt-3 pb-3">
         <div className="max-w-6xl mx-auto px-4">
           {showPrompt && (
