@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import axios from 'axios'; // Import axios at the top of your file
 import { db } from '../firebaseConfig';
 import {
   collection,
@@ -63,20 +64,49 @@ function MintSuccess({ userName, walletAddress }) {
 
   const postTweet = async () => {
     if (newTweet.trim() === '') return;
-
+  
+    const tweetContent = {
+      content: newTweet,
+      timestamp: new Date().toISOString(), // ISO string format for consistency
+    };
+  
+    const blob = new Blob([JSON.stringify(tweetContent)], { type: 'application/json' });
+    const file = new File([blob], 'tweet-content.json', { type: 'application/json' });
+    const formData = new FormData();
+    formData.append('file', file);
+  
+    const pinataEndpoint = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+    const headers = {
+      pinata_api_key: import.meta.env.VITE_PINATA_API_KEY,
+      pinata_secret_api_key: import.meta.env.VITE_PINATA_SECRET_API_KEY,
+    };
+  
     try {
+      const response = await axios.post(pinataEndpoint, formData, {
+        headers: {
+          ...headers,
+          'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+        },
+      });
+  
+      const ipfsHash = response.data.IpfsHash;
+      console.log("Tweet content added to IPFS:", ipfsHash);
+  
+      // Now, store the tweet with its IPFS hash in Firestore
       await addDoc(collection(db, "tweets"), {
         content: newTweet,
+        ipfsHash: ipfsHash, // Store the IPFS hash
         likes: 0,
         likedBy: [],
         comments: [],
         timestamp: new Date(),
         walletAddress: walletAddress
       });
+  
       setNewTweet('');
       console.log("Tweet added successfully.")
     } catch (error) {
-      console.error("Error adding tweet: ", error);
+      console.error("Error adding tweet to IPFS or Firestore: ", error);
     }
   };
 

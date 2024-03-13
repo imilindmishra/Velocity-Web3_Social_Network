@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import { useLocation, Link } from 'react-router-dom';
 
@@ -57,6 +57,7 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
   };
 
   
+
   const disconnectWalletHandler = () => {
     setWalletAddress('');
     setNetworkName('');
@@ -65,25 +66,22 @@ const NavBar = ({ walletAddress, setWalletAddress }) => {
 
   return (
     <nav className="bg-orange-100 pt-3 pb-3">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="flex justify-between">
-          <div className="flex text-3xl mt-1 space-x-4 text-black font-serif text-3x1">
-            Velocity
-          </div>
-          <div className="flex items-center space-x-4 relative">
-            {isRootRoute && (
-            <>
-              <Link to="/about" className=" font-serif text-black hover:text-orange-900 text-lg">
-                About
-              </Link>
-              <Link to="/developers" className=" font-serif text-black hover:text-orange-900 text-lg">
-                Developers
-              </Link>
-              <Link to="/stories" className="font-serif text-black hover:text-orange-900 text-lg">
-                Stories
-              </Link>
-            </>
-          )}
+    <div className="max-w-6xl mx-auto px-4">
+      <div className="flex justify-between">
+        <div className="flex text-3xl mt-1 space-x-4 text-black font-serif">
+          {/* Assuming you want to keep the "Velocity" text as is */}
+          <Link to="/">Velocity</Link> {/* This makes the logo clickable and redirects to home */}
+        </div>
+        <div className="flex items-center space-x-4">
+        {isRootRoute && (
+              <>
+                <Link to="/about" className="font-serif text-black hover:text-orange-900 text-lg">About</Link>
+                <Link to="/developers" className="font-serif text-black hover:text-orange-900 text-lg">Developers</Link>
+                <Link to="/stories" className="font-serif text-black hover:text-orange-900 text-lg">Stories</Link>
+                {/* Add the new Bounties Link here */}
+                <Link to="/bounties" className="font-serif text-black hover:text-orange-900 text-lg">Bounties</Link>
+              </>
+            )}
             {walletAddress ? (
               <>
                 <button
