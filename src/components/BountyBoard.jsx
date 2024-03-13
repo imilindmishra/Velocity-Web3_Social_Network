@@ -279,59 +279,71 @@ function BountyBoard({ walletAddress }) {
   return (
     <>
       {/* Header */}
-      <div className="bg-orange-50 flex items-center px-4 py-6">
-        <h1 className="text-5xl font-serif">
+      <div className="bg-orange-50 flex items-center py-6">
+        <h1 className="text-5xl pl-[70px] font-serif">
           Welcome to <span className="text-orange-900 font-bold">Bounty Board</span>,<br />
           a platform to post and solve bounties.
         </h1>
       </div>
 
       {/* Main content */}
-      <div className="bg-orange-100 py-6">
+      <div className="bg-orange-100 py-6 pl-[54px]">
         {/* Go to Profile button */}
-        <button onClick={() => navigate('/profile')} className="bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium">Go to Profile</button>
 
         {/* Create a new bounty section */}
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="p-4 bg-orange-100">
-            <h2 className="text-lg font-semibold mb-4">Create a New Bounty</h2>
-            <div>
-              <input
-                type="text"
-                value={newBounty}
-                onChange={(e) => setNewBounty(e.target.value)}
-                placeholder="Bounty description"
-                className="input"
-              />
-              <input
-                type="text"
-                value={bountyAmount}
-                onChange={(e) => setBountyAmount(e.target.value)}
-                placeholder="Bounty amount in SHM"
-                className="input"
-              />
-              <button onClick={postBounty} className="btn btn-blue">Post Bounty</button>
-            </div>
-          </div>
-        </div>
+        <div className="max-w-6xl  px-4">
+  <div className="p-4 bg-orange-100 w-1/4">
+    <h2 className="text-lg font-semibold mb-4">Create a New Bounty</h2>
+    <div className="flex flex-col">
+      <div className="flex flex-row space-x-4 mb-4">
+        <input
+          type="text"
+          value={newBounty}
+          onChange={(e) => setNewBounty(e.target.value)}
+          placeholder="Bounty description"
+          className="input bg-transparent border-orange-900 border-2 shadow-md px-4 py-2 rounded-lg flex-grow"
+        />
+        <input
+          type="text"
+          value={bountyAmount}
+          onChange={(e) => setBountyAmount(e.target.value)}
+          placeholder="Bounty amount in SHM"
+          className="input bg-transparent border-orange-900 border-2 shadow-md px-4 py-2 rounded-lg flex-grow"
+        />
+      </div>
+      <button
+        onClick={postBounty}
+        className="btn bg-orange-900 text-white font-serif px-6 py-3 rounded-lg shadow-md"
+      >
+        Post Bounty
+      </button>
+    </div>
+  </div>
+</div>
 
         {/* Current bounties section */}
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-6xl px-4">
           <div className="p-4 bg-orange-100">
             <h2 className="text-lg font-semibold mb-4">Current Bounties</h2>
             {bounties.map((bounty) => (
-              <div key={bounty.id} className="bg-gray-100 p-4 rounded-lg mb-4 shadow">
-                <div>Description: {bounty.content}</div>
-                <div>Amount: {bounty.amount} SHM</div>
+              <div key={bounty.id} className="bg-transparent p-4 rounded-lg mb-4 shadow-xl">
+                <div className=" border-b-2 py-2">
+                  <div className="font-serif font-bold">Description: {bounty.content}</div>
+                  <div className="font-serif font-bold">Amount: {bounty.amount} SHM</div>
+                </div>
                 {/* Solution submission form */}
                 <div>
                   <textarea
                     value={newSolution[bounty.id] || ''}
                     onChange={(e) => setNewSolution({ ...newSolution, [bounty.id]: e.target.value })}
                     placeholder="Your solution..."
-                    className="textarea textarea-bordered w-full mb-2 px-4 py-2 shadow-lg"
+                    className="textarea bg-orange-50 textarea-bordered w-full mb-2 px-4 py-2 shadow-lg"
                   />
-                  <button onClick={() => submitSolution(bounty.id, newSolution[bounty.id])} className="btn btn-green">Submit Solution</button>
+				  <div className="bg-orange-900 text-white font-serif w-[80px] py-1 px-4 rounded-lg">
+                    <button onClick={() => submitSolution(bounty.id, newSolution[bounty.id])} className="btn btn-green text-white font-serif">
+                      Submit
+                    </button>
+                  </div>
                 </div>
                 {/* Display solutions */}
                 <div>
