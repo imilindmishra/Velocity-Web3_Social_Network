@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import Web3 from 'web3';
 import { db } from '../firebaseConfig';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
@@ -9,27 +9,20 @@ const Profile = () => {
   const [metadata, setMetadata] = useState(null);
   const [tweets, setTweets] = useState([]);
   const [userComments, setUserComments] = useState([]);
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   const goToMintSuccess = () => {
-    navigate('/mint-success'); // Navigate to MintSuccess component
+    navigate('/mint-success');
   };
 
   useEffect(() => {
     const fetchWalletAddress = async () => {
       try {
-        // Check if Web3 is injected by the browser (e.g., MetaMask)
         if (window.ethereum) {
           const web3 = new Web3(window.ethereum);
           await window.ethereum.enable();
           const accounts = await web3.eth.getAccounts();
           setWalletAddress(accounts[0]);
-
-          // Here, you can fetch the metadata associated with the wallet address
-          // from your smart contract or centralized storage
-          // For example:
-          // const metadata = await fetchMetadataFromContract(accounts[0]);
-          // setMetadata(metadata);
         } else {
           alert('Please install a Web3 wallet like MetaMask to use this feature');
         }
@@ -37,42 +30,35 @@ const Profile = () => {
         console.error('Error fetching wallet address:', error);
       }
     };
-
     fetchWalletAddress();
   }, []);
 
   useEffect(() => {
-  if (!walletAddress) {
-    return; // If walletAddress is not defined, exit the effect
-  }
+    if (!walletAddress) {
+      return;
+    }
 
-  // Listen for new tweets and update state
-  const q = query(collection(db, "tweets"), orderBy("timestamp", "desc"));
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const tweetsArray = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setTweets(tweetsArray);
+    const q = query(collection(db, "tweets"), orderBy("timestamp", "desc"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const tweetsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTweets(tweetsArray);
 
-    // Collect all comments made by the current user's wallet address
-    const userCommentsArray = tweetsArray.reduce((acc, tweet) => {
-      if (tweet.comments) {
-        const userComments = tweet.comments.filter(comment => comment.walletAddress === walletAddress);
-        return [...acc, ...userComments];
-      }
-      return acc;
-    }, []);
-    setUserComments(userCommentsArray);
-  });
+      const userCommentsArray = tweetsArray.reduce((acc, tweet) => {
+        if (tweet.comments) {
+          const userComments = tweet.comments.filter(comment => comment.walletAddress === walletAddress);
+          return [...acc, ...userComments];
+        }
+        return acc;
+      }, []);
+      setUserComments(userCommentsArray);
+    });
 
-  // Cleanup listener on component unmount
-  return () => unsubscribe();
-}, [walletAddress]); // Remove userComments from the dependency array
+    return () => unsubscribe();
+  }, [walletAddress]);
 
   return (
-    <div>
-    <button onClick={goToMintSuccess}>Go to Tweets </button> 
+    <div className="bg-orange-100 min-h-screen font-serif">
+      <button onClick={goToMintSuccess}>Go to Tweets</button>
       <h2>Your Profile</h2>
       {walletAddress && (
         <div>
